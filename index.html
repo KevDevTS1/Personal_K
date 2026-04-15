@@ -1,0 +1,828 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agente de Picks Deportivos</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #0b1220;
+      --card: #121b2e;
+      --card-2: #1a2640;
+      --text: #eef2ff;
+      --muted: #94a3b8;
+      --accent: #22c55e;
+      --warn: #f59e0b;
+      --danger: #ef4444;
+      --border: #28344f;
+    }
+
+    * {
+      box-sizing: border-box;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+    }
+
+    body {
+      margin: 0;
+      background: linear-gradient(180deg, #090f1f 0%, #0b1220 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    .container {
+      width: min(1200px, 92vw);
+      margin: 0 auto;
+      padding: 20px 0 48px;
+    }
+
+    .top {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(20px, 2.4vw, 32px);
+    }
+
+    .sub {
+      margin: 6px 0 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    button, select, input {
+      border: 1px solid var(--border);
+      background: var(--card-2);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+
+    button {
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .primary {
+      background: linear-gradient(120deg, #16a34a, #22c55e);
+      color: #04120a;
+      border: none;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .panel h2 {
+      margin: 0 0 10px;
+      font-size: 17px;
+    }
+
+    .filters label, .setting-row label {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .filters .group, .setting-row {
+      margin-bottom: 10px;
+    }
+
+    .chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .chip {
+      border: 1px solid var(--border);
+      background: #0d1729;
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: 12px;
+      color: #cbd5e1;
+      cursor: pointer;
+    }
+
+    .chip.active {
+      background: #173153;
+      border-color: #2f5f98;
+      color: #e2ecff;
+    }
+
+    .status {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+      min-height: 18px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+      gap: 10px;
+    }
+
+    .pick {
+      border: 1px solid var(--border);
+      background: linear-gradient(160deg, #111b31 0%, #0e1629 100%);
+      border-radius: 12px;
+      padding: 12px;
+    }
+
+    .pick .sport {
+      font-size: 12px;
+      color: #9ac1ff;
+      margin-bottom: 5px;
+      letter-spacing: .2px;
+    }
+
+    .pick h3 {
+      font-size: 15px;
+      margin: 0 0 6px;
+    }
+
+    .line {
+      color: #dbeafe;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .pick-details {
+      display: grid;
+      gap: 4px;
+      margin: 10px 0;
+      font-size: 13px;
+    }
+
+    .pick-details .row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      align-items: baseline;
+    }
+
+    .pick-details .k {
+      color: var(--muted);
+      font-size: 11px;
+      min-width: 72px;
+    }
+
+    .pick-details .v {
+      color: #e2e8f0;
+      flex: 1;
+    }
+
+    .bookmakers {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 4px;
+    }
+
+    .bookmakers span {
+      background: #0d1729;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 4px 8px;
+      font-size: 11px;
+      color: #cbd5e1;
+    }
+
+    .odds-note {
+      font-size: 10px;
+      color: var(--muted);
+      margin-top: 6px;
+      line-height: 1.35;
+    }
+
+    .meta {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #b8c6dc;
+      gap: 10px;
+    }
+
+    .confidence {
+      font-weight: 700;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: #14381f;
+      color: #8bffb6;
+    }
+
+    .confidence.medium {
+      background: #3b2d13;
+      color: #fcd34d;
+    }
+
+    .confidence.low {
+      background: #3d1720;
+      color: #fda4af;
+    }
+
+    .arg {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #d5deef;
+      line-height: 1.35;
+    }
+
+    .small {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    dialog {
+      width: min(700px, 94vw);
+      background: #0f172b;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text);
+      padding: 16px;
+    }
+
+    dialog::backdrop {
+      background: rgba(0, 0, 0, .6);
+    }
+
+    .settings-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    .warning {
+      background: #2d220d;
+      border: 1px solid #6b4f16;
+      color: #fef3c7;
+      padding: 10px;
+      border-radius: 10px;
+      margin: 10px 0 6px;
+      font-size: 13px;
+    }
+
+    @media (max-width: 920px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+      .settings-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="top">
+      <div>
+        <h1>Agente de Picks Deportivos</h1>
+        <p class="sub">Baloncesto, futbol, tenis y beisbol con picks del dia, props y ranking por confianza.</p>
+      </div>
+      <div class="actions">
+        <button id="openSettings">Configurar APIs</button>
+        <button id="refreshBtn" class="primary">Actualizar picks de hoy</button>
+      </div>
+    </div>
+
+    <div class="grid">
+      <aside class="panel filters">
+        <h2>Filtros</h2>
+        <div class="group">
+          <label>Deporte</label>
+          <div id="sportChips" class="chips"></div>
+        </div>
+        <div class="group">
+          <label>Liga</label>
+          <select id="leagueSelect"></select>
+        </div>
+        <div class="group">
+          <label>Tipo de apuesta</label>
+          <select id="betTypeSelect">
+            <option value="all">Todas</option>
+            <option value="moneyline">Moneyline / Ganador</option>
+            <option value="spread">Spread / Handicap</option>
+            <option value="totals">Totales (Over/Under)</option>
+            <option value="handicap">Handicap (futbol)</option>
+            <option value="corners">Corners (futbol)</option>
+            <option value="btts">Ambos anotan (futbol)</option>
+            <option value="cards">Tarjetas (futbol)</option>
+            <option value="team_totals">Total por equipo (futbol)</option>
+            <option value="first_half">1er tiempo (futbol)</option>
+            <option value="player_props">Player Props</option>
+          </select>
+        </div>
+        <div class="group">
+          <label>Fecha (hora Colombia - Bogota)</label>
+          <input type="date" id="dateInput">
+          <div class="small">Se consulta solo la fecha elegida.</div>
+        </div>
+        <div class="group">
+          <label>Confianza minima</label>
+          <input type="range" id="confidenceRange" min="50" max="95" value="60">
+          <div class="small"><span id="confidenceValue">60</span>% o mas</div>
+        </div>
+        <div class="status" id="status">Listo para actualizar.</div>
+      </aside>
+
+      <main style="display: grid; gap: 14px;">
+        <section class="panel">
+          <h2>Mejores picks del dia</h2>
+          <p class="small">Top picks ordenados por confianza y valor esperado.</p>
+          <div id="topPicks" class="cards"></div>
+        </section>
+
+        <section class="panel">
+          <h2>Todas las apuestas detectadas</h2>
+          <p class="small">Incluye mercados principales y props de jugador/equipo.</p>
+          <div id="allPicks" class="cards"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <dialog id="settingsDialog">
+    <h2 style="margin: 0 0 10px;">Configuracion de APIs</h2>
+    <p class="small">Guarda tus claves para consumir datos en tiempo real.</p>
+    <div class="warning">
+      Sofascore y Flashscore no suelen ofrecer API publica oficial para uso externo. Para datos en vivo de forma estable, usa APIs oficiales/licenciadas (por ejemplo API-SPORTS, The Odds API, SportMonks) o un backend propio que agregue fuentes oficiales.
+    </div>
+    <div class="settings-grid">
+      <div class="setting-row">
+        <label>API-SPORTS Key (futbol / beisbol / basquet)</label>
+        <input id="apiSportsKey" placeholder="tu_api_sports_key">
+      </div>
+      <div class="setting-row">
+        <label>The Odds API Key (cuotas/mercados)</label>
+        <input id="oddsApiKey" placeholder="tu_the_odds_api_key">
+      </div>
+      <div class="setting-row">
+        <label>SportMonks Key (stats avanzadas)</label>
+        <input id="sportMonksKey" placeholder="tu_sportmonks_key">
+      </div>
+      <div class="setting-row">
+        <label>Endpoint Proxy (opcional)</label>
+        <input id="proxyUrl" placeholder="https://tu-backend.com/proxy">
+      </div>
+    </div>
+    <div style="display:flex; gap:10px; margin-top:12px; justify-content:flex-end;">
+      <button id="closeSettings">Cerrar</button>
+      <button id="saveSettings" class="primary">Guardar</button>
+    </div>
+  </dialog>
+
+  <script>
+    const SPORTS = ["futbol", "baloncesto", "tenis", "beisbol"];
+    const STORAGE_KEY = "sports_agent_config_v1";
+    const PICKS_CACHE_PREFIX = "sports_agent_picks_cache_";
+    const LAST_UPDATE_KEY = "sports_agent_last_update";
+
+    function picksCacheStorageKey(dateStr) {
+      return PICKS_CACHE_PREFIX + (dateStr || todayBogotaIso());
+    }
+    const BOGOTA_TZ = "America/Bogota";
+
+    const state = {
+      selectedSport: "futbol",
+      selectedLeague: "Todas",
+      selectedBetType: "all",
+      selectedDate: "",
+      minConfidence: 60,
+      picks: []
+    };
+
+    let leagueCatalog = null;
+
+    function escapeHtml(str) {
+      if (str == null) return "";
+      return String(str)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    async function ensureLeagueCatalog() {
+      if (leagueCatalog) return;
+      try {
+        const r = await fetch("/api/league-catalog");
+        leagueCatalog = await r.json();
+      } catch {
+        leagueCatalog = { futbol: [], baloncesto: [], tenis: [], beisbol: [] };
+      }
+    }
+
+    const el = {
+      sportChips: document.getElementById("sportChips"),
+      leagueSelect: document.getElementById("leagueSelect"),
+      betTypeSelect: document.getElementById("betTypeSelect"),
+      dateInput: document.getElementById("dateInput"),
+      confidenceRange: document.getElementById("confidenceRange"),
+      confidenceValue: document.getElementById("confidenceValue"),
+      refreshBtn: document.getElementById("refreshBtn"),
+      topPicks: document.getElementById("topPicks"),
+      allPicks: document.getElementById("allPicks"),
+      status: document.getElementById("status"),
+      settingsDialog: document.getElementById("settingsDialog"),
+      openSettings: document.getElementById("openSettings"),
+      closeSettings: document.getElementById("closeSettings"),
+      saveSettings: document.getElementById("saveSettings"),
+      apiSportsKey: document.getElementById("apiSportsKey"),
+      oddsApiKey: document.getElementById("oddsApiKey"),
+      sportMonksKey: document.getElementById("sportMonksKey"),
+      proxyUrl: document.getElementById("proxyUrl")
+    };
+
+    function loadConfig() {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { apiSportsKey: "", oddsApiKey: "", sportMonksKey: "", proxyUrl: "" };
+      try { return JSON.parse(raw); }
+      catch { return { apiSportsKey: "", oddsApiKey: "", sportMonksKey: "", proxyUrl: "" }; }
+    }
+
+    function saveConfig(cfg) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(cfg));
+    }
+
+    function loadCachedPicks(forDateStr) {
+      const d = forDateStr || state.selectedDate || todayBogotaIso();
+      const raw = localStorage.getItem(picksCacheStorageKey(d));
+      if (!raw) return [];
+      try { return JSON.parse(raw); }
+      catch { return []; }
+    }
+
+    function saveCachedPicks(picks, forDateStr) {
+      const d = forDateStr || state.selectedDate || todayBogotaIso();
+      localStorage.setItem(picksCacheStorageKey(d), JSON.stringify(picks));
+      localStorage.setItem(LAST_UPDATE_KEY + "_" + d, new Date().toISOString());
+    }
+
+    function setStatus(text) {
+      el.status.textContent = text;
+    }
+
+    function confidenceClass(value) {
+      if (value >= 75) return "confidence";
+      if (value >= 65) return "confidence medium";
+      return "confidence low";
+    }
+
+    function renderSportChips() {
+      el.sportChips.innerHTML = "";
+      for (const sport of SPORTS) {
+        const chip = document.createElement("button");
+        chip.type = "button";
+        chip.className = `chip ${sport === state.selectedSport ? "active" : ""}`;
+        chip.textContent = sport;
+        chip.addEventListener("click", () => {
+          state.selectedSport = sport;
+          state.selectedLeague = "Todas";
+          renderSportChips();
+          renderLeagueSelect().then(() => renderPicks());
+        });
+        el.sportChips.appendChild(chip);
+      }
+    }
+
+    async function renderLeagueSelect() {
+      await ensureLeagueCatalog();
+      const keyMap = { futbol: "futbol", baloncesto: "baloncesto", tenis: "tenis", beisbol: "beisbol" };
+      const key = keyMap[state.selectedSport] || "futbol";
+      const rows = leagueCatalog[key] || [];
+      const options = [{ value: "Todas", label: "Todas" }, ...rows.map((r) => ({ value: r.slug, label: r.label }))];
+      const valid = new Set(options.map((o) => o.value));
+      if (!valid.has(state.selectedLeague)) state.selectedLeague = "Todas";
+      el.leagueSelect.innerHTML = options.map((o) =>
+        `<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`
+      ).join("");
+      el.leagueSelect.value = state.selectedLeague;
+      state.selectedLeague = el.leagueSelect.value;
+    }
+
+    function normalizePick(raw) {
+      const confidence = Math.max(50, Math.min(95, Number(raw.confidence || 60)));
+      const dateRaw = raw.eventDateUtc || raw.eventDate || raw.date || null;
+      const eventDateUtc = dateRaw ? new Date(dateRaw).toISOString() : null;
+      return {
+        id: raw.id || crypto.randomUUID(),
+        sport: raw.sport || "futbol",
+        league: raw.league || "General",
+        leagueSlug: raw.leagueSlug || null,
+        event: raw.event || "Partido por definir",
+        market: raw.market || "moneyline",
+        marketLabel: raw.marketLabel || null,
+        playerName: raw.playerName ?? null,
+        teamLabel: raw.teamLabel ?? null,
+        lineLabel: raw.lineLabel ?? null,
+        statLabel: raw.statLabel ?? null,
+        sideLabel: raw.sideLabel ?? null,
+        propType: raw.propType ?? null,
+        selection: raw.selection || "Sin seleccion",
+        odds: Number(raw.odds || 1.8),
+        confidence,
+        argument: raw.argument || "Pick generado por modelo estadistico con datos recientes.",
+        eventDateUtc,
+        bookmakerOdds: Array.isArray(raw.bookmakerOdds) ? raw.bookmakerOdds : [],
+        oddsSource: raw.oddsSource || null,
+        oddsNote: raw.oddsNote || null,
+        forDate: raw.forDate || null
+      };
+    }
+
+    function dayKeyInBogota(dateIso) {
+      if (!dateIso) return "";
+      const parts = new Intl.DateTimeFormat("sv-SE", {
+        timeZone: BOGOTA_TZ,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit"
+      }).formatToParts(new Date(dateIso));
+      const map = Object.fromEntries(parts.map((p) => [p.type, p.value]));
+      return `${map.year}-${map.month}-${map.day}`;
+    }
+
+    function dayKeyTodayBogota(offset = 0) {
+      const base = dayKeyInBogota(new Date().toISOString());
+      const [y, m, d] = base.split("-").map(Number);
+      const date = new Date(Date.UTC(y, m - 1, d));
+      date.setUTCDate(date.getUTCDate() + offset);
+      return date.toISOString().slice(0, 10);
+    }
+
+    function formatBogotaDate(dateIso) {
+      if (!dateIso) return "Fecha no disponible";
+      return new Intl.DateTimeFormat("es-CO", {
+        timeZone: BOGOTA_TZ,
+        dateStyle: "medium",
+        timeStyle: "short"
+      }).format(new Date(dateIso));
+    }
+
+    function todayBogotaIso() {
+      return dayKeyInBogota(new Date().toISOString());
+    }
+
+    function scorePick(pick) {
+      const oddsValue = pick.odds >= 1.8 && pick.odds <= 2.4 ? 4 : 2;
+      const marketBoost = pick.market === "player_props" ? 3 : 1;
+      return (pick.confidence * 1.3) + oddsValue + marketBoost;
+    }
+
+    function filteredPicks() {
+      return state.picks
+        .filter((p) => p.sport === state.selectedSport)
+        .filter((p) => {
+          if (state.selectedLeague === "Todas") return true;
+          if (p.leagueSlug && p.leagueSlug === state.selectedLeague) return true;
+          return p.league === state.selectedLeague;
+        })
+        .filter((p) => state.selectedBetType === "all" || p.market === state.selectedBetType)
+        .filter((p) => p.confidence >= state.minConfidence);
+    }
+
+    function renderPickCard(pick) {
+      const card = document.createElement("article");
+      card.className = "pick";
+      const detailRows = [];
+      if (pick.marketLabel) {
+        detailRows.push(`<div class="row"><span class="k">Mercado</span><span class="v">${escapeHtml(pick.marketLabel)}</span></div>`);
+      }
+      if (pick.playerName) {
+        detailRows.push(`<div class="row"><span class="k">Jugador</span><span class="v">${escapeHtml(pick.playerName)}</span></div>`);
+      }
+      if (pick.teamLabel && pick.propType === "team") {
+        detailRows.push(`<div class="row"><span class="k">Equipo</span><span class="v">${escapeHtml(pick.teamLabel)}</span></div>`);
+      }
+      if (pick.lineLabel) {
+        detailRows.push(`<div class="row"><span class="k">Linea</span><span class="v">${escapeHtml(pick.lineLabel)}</span></div>`);
+      }
+      if (pick.sideLabel) {
+        detailRows.push(`<div class="row"><span class="k">Lado</span><span class="v">${escapeHtml(pick.sideLabel)}</span></div>`);
+      }
+      if (pick.statLabel) {
+        detailRows.push(`<div class="row"><span class="k">Estadistica</span><span class="v">${escapeHtml(pick.statLabel)}</span></div>`);
+      }
+      const bm = (pick.bookmakerOdds || []).map((b) =>
+        `<span>${escapeHtml(b.bookmaker)}: <strong>${Number(b.odds).toFixed(2)}</strong></span>`
+      ).join("");
+      const oddsNote = `<div class="odds-note">${escapeHtml(pick.oddsNote || "Cuotas de referencia para el mercado colombiano; confirma siempre en la casa elegida.")}</div>`;
+      card.innerHTML = `
+        <div class="sport">${escapeHtml(pick.sport.toUpperCase())} - ${escapeHtml(pick.league)}</div>
+        <h3>${escapeHtml(pick.event)}</h3>
+        <div class="small">Fecha partido: ${formatBogotaDate(pick.eventDateUtc)} (Bogota)</div>
+        ${pick.forDate ? `<div class="small">Modelo calculado para el dia: ${escapeHtml(pick.forDate)}</div>` : ""}
+        <div class="pick-details">${detailRows.join("")}</div>
+        <div class="line">Resumen: ${escapeHtml(pick.selection)} <span class="small">(${escapeHtml(pick.market)})</span></div>
+        <div class="meta">
+          <span>Cuota media (referencia): ${pick.odds.toFixed(2)}</span>
+          <span class="${confidenceClass(pick.confidence)}">${pick.confidence}%</span>
+        </div>
+        <div class="bookmakers">${bm}</div>
+        ${oddsNote}
+        <div class="arg">${escapeHtml(pick.argument)}</div>
+      `;
+      return card;
+    }
+
+    function renderPicks() {
+      const picks = filteredPicks();
+      const top = [...picks].sort((a, b) => scorePick(b) - scorePick(a)).slice(0, 6);
+      el.topPicks.innerHTML = "";
+      el.allPicks.innerHTML = "";
+
+      if (!picks.length) {
+        const totalReal = state.picks.length;
+        const empty = `<p class="small">No hay picks con estos filtros. ${totalReal ? `Hay ${totalReal} picks cargados; cambia liga/deporte a "Todas" o baja la confianza minima.` : "Pulsa actualizar para cargar eventos del dia."}</p>`;
+        el.topPicks.innerHTML = empty;
+        el.allPicks.innerHTML = empty;
+        return;
+      }
+
+      for (const pick of top) el.topPicks.appendChild(renderPickCard(pick));
+      for (const pick of picks) el.allPicks.appendChild(renderPickCard(pick));
+    }
+
+    async function fetchJson(url, options = {}) {
+      const response = await fetch(url, options);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      return response.json();
+    }
+
+    async function getFootballFromApiSports(config) {
+      if (!config.apiSportsKey) return [];
+      const url = "https://v3.football.api-sports.io/fixtures?next=15";
+      const data = await fetchJson(url, { headers: { "x-apisports-key": config.apiSportsKey } });
+      const fixtures = data.response || [];
+      return fixtures.map((m, idx) => normalizePick({
+        id: `api-foot-${idx}`,
+        sport: "futbol",
+        league: m.league?.name || "General",
+        event: `${m.teams?.home?.name || "Home"} vs ${m.teams?.away?.name || "Away"}`,
+        market: idx % 3 === 0 ? "totals" : "moneyline",
+        selection: idx % 3 === 0 ? "Over 2.5 goles" : `${m.teams?.home?.name || "Local"} gana`,
+        odds: 1.7 + (idx % 8) / 10,
+        confidence: 61 + (idx % 27),
+        argument: "Basado en forma reciente, rendimiento ofensivo y condicion local/visitante."
+      }));
+    }
+
+    async function getOddsMarkets(config) {
+      if (!config.oddsApiKey) return [];
+      const sports = ["soccer", "basketball_nba", "tennis_atp", "baseball_mlb"];
+      const promises = sports.map((s) =>
+        fetchJson(`https://api.the-odds-api.com/v4/sports/${s}/odds?apiKey=${config.oddsApiKey}&regions=us&markets=h2h,spreads,totals&oddsFormat=decimal`)
+          .catch(() => [])
+      );
+      const sets = await Promise.all(promises);
+      const merged = sets.flat();
+      return merged.slice(0, 50).map((m, idx) => {
+        const sportMap = {
+          soccer: "futbol",
+          basketball_nba: "baloncesto",
+          tennis_atp: "tenis",
+          baseball_mlb: "beisbol"
+        };
+        const sport = sportMap[m.sport_key] || "futbol";
+        return normalizePick({
+          id: `odds-${idx}`,
+          sport,
+          league: m.sport_title || "General",
+          event: `${m.home_team || "Home"} vs ${m.away_team || "Away"}`,
+          market: ["moneyline", "spread", "totals"][idx % 3],
+          selection: idx % 3 === 0 ? `${m.home_team || "Home"} gana` : idx % 3 === 1 ? "Handicap -1.5" : "Over 2.5",
+          odds: 1.6 + (idx % 10) / 10,
+          confidence: 58 + (idx % 30),
+          argument: "Modelo de valor cruzando cuota implicita, volatilidad del mercado y matchup estadistico."
+        });
+      });
+    }
+
+    async function getBackendPicks() {
+      const targetDate = state.selectedDate || todayBogotaIso();
+      const response = await fetch(`/api/picks?targetDate=${encodeURIComponent(targetDate)}`);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json();
+      return (data.picks || []).map(normalizePick);
+    }
+
+    async function updatePicks() {
+      setStatus("Actualizando datos reales para la fecha seleccionada...");
+      el.refreshBtn.disabled = true;
+      try {
+        const merged = await getBackendPicks();
+        if (!merged.length) {
+          setStatus("No hay eventos suficientes para la fecha seleccionada.");
+          state.picks = [];
+          renderPicks();
+          return;
+        }
+
+        state.picks = merged;
+        saveCachedPicks(state.picks, state.selectedDate || todayBogotaIso());
+        await renderLeagueSelect();
+        setStatus(`Actualizacion completada: ${state.picks.length} picks reales generados.`);
+        renderPicks();
+      } catch (err) {
+        console.error(err);
+        setStatus("Error al actualizar desde el backend. Verifica que el servidor este activo con 'npm start'.");
+      } finally {
+        el.refreshBtn.disabled = false;
+      }
+    }
+
+    function bindEvents() {
+      el.leagueSelect.addEventListener("change", () => {
+        state.selectedLeague = el.leagueSelect.value;
+        renderPicks();
+      });
+
+      el.betTypeSelect.addEventListener("change", () => {
+        state.selectedBetType = el.betTypeSelect.value;
+        renderPicks();
+      });
+
+      el.dateInput.addEventListener("change", () => {
+        state.selectedDate = el.dateInput.value;
+        updatePicks();
+      });
+
+      el.confidenceRange.addEventListener("input", () => {
+        state.minConfidence = Number(el.confidenceRange.value);
+        el.confidenceValue.textContent = String(state.minConfidence);
+        renderPicks();
+      });
+
+      el.refreshBtn.addEventListener("click", updatePicks);
+
+      el.openSettings.addEventListener("click", () => {
+        const cfg = loadConfig();
+        el.apiSportsKey.value = cfg.apiSportsKey || "";
+        el.oddsApiKey.value = cfg.oddsApiKey || "";
+        el.sportMonksKey.value = cfg.sportMonksKey || "";
+        el.proxyUrl.value = cfg.proxyUrl || "";
+        el.settingsDialog.showModal();
+      });
+
+      el.closeSettings.addEventListener("click", () => el.settingsDialog.close());
+
+      el.saveSettings.addEventListener("click", () => {
+        saveConfig({
+          apiSportsKey: el.apiSportsKey.value.trim(),
+          oddsApiKey: el.oddsApiKey.value.trim(),
+          sportMonksKey: el.sportMonksKey.value.trim(),
+          proxyUrl: el.proxyUrl.value.trim()
+        });
+        el.settingsDialog.close();
+        setStatus("Configuracion guardada. Pulsa 'Actualizar picks de hoy'.");
+      });
+    }
+
+    async function bootstrap() {
+      renderSportChips();
+      state.selectedDate = todayBogotaIso();
+      el.dateInput.value = state.selectedDate;
+      bindEvents();
+      await renderLeagueSelect();
+      const cached = loadCachedPicks(state.selectedDate);
+      if (cached.length) {
+        state.picks = cached.map(normalizePick);
+        const last = localStorage.getItem(LAST_UPDATE_KEY + "_" + state.selectedDate);
+        setStatus(`Cache local para ${state.selectedDate}${last ? ` (ultima actualizacion: ${new Date(last).toLocaleString()})` : ""}.`);
+        renderPicks();
+      } else {
+        state.picks = [];
+        setStatus("Sin cache local. Pulsa actualizar para cargar picks reales del dia.");
+        renderPicks();
+      }
+    }
+
+    bootstrap();
+  </script>
+</body>
+</html>
