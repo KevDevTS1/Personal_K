@@ -1,4 +1,4 @@
-import { colombianBookmakerOdds } from "../model/scoring.js";
+import { colombianBookmakerOdds, kellyStakeCOP } from "../model/scoring.js";
 
 const MARKET_LABELS = {
   moneyline: "Ganador del partido",
@@ -40,6 +40,7 @@ export function enrichPick(p) {
       : null),
     bookmakerOdds: colombianBookmakerOdds(base),
     oddsSource: "referencia_mercado_co",
-    oddsNote: "Cuotas de referencia para operadores en CO; confirma en la casa antes de apostar."
+    oddsNote: "Cuotas de referencia para operadores en CO; confirma en la casa antes de apostar.",
+    stake: kellyStakeCOP(p.modelProb, base)
   };
 }

@@ -74,6 +74,38 @@ export function bookHalfLine(avg) {
   return String(Math.round(a * 2) / 2);
 }
 
+/**
+ * Kelly Criterion conservador para apuestas deportivas en COP.
+ * Usa cuarto-Kelly (25%) para reducir varianza.
+ * bankroll: presupuesto mensual COP (por defecto 200,000)
+ * Retorna { stake, label, advice }
+ */
+export function kellyStakeCOP(modelProb, decimalOdds, bankroll = 200000) {
+  const p = clamp(Number(modelProb) || 0.5, 0.01, 0.99);
+  const b = Math.max(0.01, Number(decimalOdds) - 1); // net odds
+  const q = 1 - p;
+  const fullKelly = (b * p - q) / b;
+  if (fullKelly <= 0) return { stake: 0, label: "No apostar", advice: "El modelo no ve valor en esta apuesta." };
+
+  const quarterKelly = fullKelly * 0.25;
+  // Redondear al múltiplo de 5,000 más cercano
+  const raw = quarterKelly * bankroll;
+  const stake = clamp(Math.round(raw / 5000) * 5000, 5000, 50000);
+
+  let label, advice;
+  if (stake >= 35000) {
+    label = "Apuesta alta";
+    advice = `Máx recomendado: $${stake.toLocaleString("es-CO")} COP. Solo con alta confianza.`;
+  } else if (stake >= 20000) {
+    label = "Apuesta media";
+    advice = `Recomendado: $${stake.toLocaleString("es-CO")} COP (${(quarterKelly*100).toFixed(1)}% de presupuesto).`;
+  } else {
+    label = "Apuesta baja";
+    advice = `Recomendado: $${stake.toLocaleString("es-CO")} COP. Señal moderada.`;
+  }
+  return { stake, label, advice, kellyPct: Number((quarterKelly * 100).toFixed(1)) };
+}
+
 /** Cuotas de referencia para casas colombianas con spread mínimo de mercado. */
 const CO_BOOKMAKERS = [
   { name: "Wplay",    offset: -0.04 },

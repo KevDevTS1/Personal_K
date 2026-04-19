@@ -426,6 +426,16 @@
       -webkit-box-orient: vertical;
       overflow: hidden;
     }
+    .stake-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      margin-top: 7px; padding: 5px 9px;
+      background: rgba(63,185,80,.10); border: 1px solid rgba(63,185,80,.28);
+      border-radius: 8px; font-size: 11px; color: var(--green); font-weight: 600;
+    }
+    .stake-badge.mid { background: rgba(227,179,65,.10); border-color: rgba(227,179,65,.3); color: var(--yellow); }
+    .stake-badge.low { background: var(--bg4); border-color: var(--border2); color: var(--text3); }
+    .stake-badge .stake-icon { font-size: 12px; }
+    .stake-badge .stake-no { color: var(--text3); font-weight: 500; }
     .best-pick-right {
       display: flex; flex-direction: column;
       align-items: flex-end; gap: 5px;
@@ -1015,6 +1025,15 @@ function renderScoreBlock(g) {
     </div>`;
 }
 
+function renderStakeBadge(pick) {
+  const s = pick.stake;
+  if (!s || s.stake === 0) return `<div class="stake-badge low"><span class="stake-no">No apostar — sin valor</span></div>`;
+  const cls = s.stake >= 35000 ? "" : s.stake >= 20000 ? "mid" : "low";
+  const icon = s.stake >= 35000 ? "💰" : s.stake >= 20000 ? "💵" : "🪙";
+  const fmt = s.stake.toLocaleString("es-CO");
+  return `<div class="stake-badge ${cls}"><span class="stake-icon">${icon}</span> Apostar hasta $${fmt} COP · ${s.label}</div>`;
+}
+
 function renderPickPreviewRow(pick, label) {
   const market = MARKET_LABELS[pick.market] || pick.marketLabel || pick.market;
   const edgeTxt = edgeLabel(pick.edge);
@@ -1027,6 +1046,7 @@ function renderPickPreviewRow(pick, label) {
         <div class="best-pick-selection">${esc(pick.selection)}</div>
         <div class="best-pick-market">${esc(market)}</div>
         <div class="best-pick-arg">${esc(arg)}</div>
+        ${renderStakeBadge(pick)}
       </div>
       <div class="best-pick-right">
         <div class="pill-block">
@@ -1100,6 +1120,7 @@ function renderPickRows(picks) {
           </div>
           <div class="pill-label">Valor</div>
         </div>` : ""}
+        ${p.stake && p.stake.stake > 0 ? `<div class="stake-badge ${p.stake.stake >= 35000 ? "" : p.stake.stake >= 20000 ? "mid" : "low"}" style="font-size:10px;padding:3px 7px;">💵 $${p.stake.stake.toLocaleString("es-CO")} COP</div>` : ""}
       </div>`;
   }).join("");
 }

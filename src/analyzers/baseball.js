@@ -161,14 +161,14 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
     eventDateUtc
   }));
 
-  // Total carreras: only if hasSignal
-  if (hasSignal(overTotal ? totProb : 1 - totProb, 0.04)) {
+  // Total carreras: solo si tenemos datos reales de runs/partido (MLB Stats API o ESPN)
+  if (hasRates && Number.isFinite(runsPgTeam) && hasSignal(overTotal ? totProb : 1 - totProb, 0.06)) {
     picks.push(buildTotalsPick({
       sport: "beisbol", league: leagueName, eventName,
       line: "8.5 carreras", over: overTotal,
       ...pp(overTotal ? totProb : 1 - totProb, oddsTot),
       confidence: confidenceFromProbability(overTotal ? totProb : 1 - totProb, 38, 82),
-      argument: `Carreras esperadas ~${expRuns.toFixed(1)} (2× runs/partido del equipo favorito).`,
+      argument: `Carreras esperadas ~${expRuns.toFixed(1)} (${mlbFavBatting ? "MLB Stats API" : "ESPN"}: ${runsPgTeam.toFixed(2)} carreras/partido).`,
       eventDateUtc
     }));
   }
