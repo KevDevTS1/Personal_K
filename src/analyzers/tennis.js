@@ -1,5 +1,6 @@
 import { clamp, toNum } from "../utils/math.js";
 import { normalizeTeamName, pickSeed } from "../utils/event.js";
+import { hasSignal } from "../utils/data.js";
 import { oddsFromProbability, confidenceFromProbability, computeEdge, tennisProbFromRanks, bookHalfLine } from "../model/scoring.js";
 import { buildMoneylinePick, buildTotalsPick } from "../picks/builders.js";
 
@@ -133,15 +134,17 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const pickOver25Sets = p3Sets >= 0.5;
   const setsProb = pickOver25Sets ? p3Sets : 1 - p3Sets;
   const oddsSets = oddsFromProbability(setsProb);
-  picks.push({
-    sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "totals", marketLabel: "Total de sets",
-    lineLabel: "2.5 sets", sideLabel: pickOver25Sets ? "Over" : "Under",
-    selection: `${pickOver25Sets ? "Over" : "Under"} 2.5 sets`,
-    modelProb: setsProb, odds: oddsSets, edge: computeEdge(setsProb, oddsSets),
-    confidence: confidenceFromProbability(setsProb, 38, 76),
-    argument: `Sets estimado: Δ ranking=${rankGap}. ${pickOver25Sets ? `Partido parejo → ~${(p3Sets*100).toFixed(0)}% de llegar al 3er set.` : `Brecha de ranking → favorito gana en 2 sets (prob ~${((1-p3Sets)*100).toFixed(0)}%).`}`
-  });
+  if (rankGap > 0) {
+    picks.push({
+      sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "totals", marketLabel: "Total de sets",
+      lineLabel: "2.5 sets", sideLabel: pickOver25Sets ? "Over" : "Under",
+      selection: `${pickOver25Sets ? "Over" : "Under"} 2.5 sets`,
+      modelProb: setsProb, odds: oddsSets, edge: computeEdge(setsProb, oddsSets),
+      confidence: confidenceFromProbability(setsProb, 38, 76),
+      argument: `Sets estimado: Δ ranking=${rankGap}. ${pickOver25Sets ? `Partido parejo → ~${(p3Sets*100).toFixed(0)}% de llegar al 3er set.` : `Brecha de ranking → favorito gana en 2 sets (prob ~${((1-p3Sets)*100).toFixed(0)}%).`}`
+    });
+  }
 
   // ── Juegos en set 1 (Over/Under línea dinámica) ──────────────────────────
   const meanSet1Games = clamp(9.5 + clamp(1 - rankGap / 120, 0, 1) * 2.5, 8, 13);
@@ -150,30 +153,34 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const pickS1Over = pSet1Over >= 0.5;
   const s1Prob = pickS1Over ? pSet1Over : 1 - pSet1Over;
   const oddsS1 = oddsFromProbability(s1Prob);
-  picks.push({
-    sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "totals", marketLabel: "Juegos en el 1er set",
-    lineLabel: `${set1Line} juegos`, sideLabel: pickS1Over ? "Over" : "Under",
-    selection: `${pickS1Over ? "Over" : "Under"} ${set1Line} juegos (1er set)`,
-    modelProb: s1Prob, odds: oddsS1, edge: computeEdge(s1Prob, oddsS1),
-    confidence: confidenceFromProbability(s1Prob, 38, 72),
-    argument: `Juegos 1er set estimados ~${meanSet1Games.toFixed(1)} (paridad de ranking Δ=${rankGap}). ${pickS1Over ? "Over: set competido entre jugadores parejos." : "Under: dominio del favorito esperado."}`
-  });
+  if (rank1 !== 100 || rank2 !== 100) {
+    picks.push({
+      sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "totals", marketLabel: "Juegos en el 1er set",
+      lineLabel: `${set1Line} juegos`, sideLabel: pickS1Over ? "Over" : "Under",
+      selection: `${pickS1Over ? "Over" : "Under"} ${set1Line} juegos (1er set)`,
+      modelProb: s1Prob, odds: oddsS1, edge: computeEdge(s1Prob, oddsS1),
+      confidence: confidenceFromProbability(s1Prob, 38, 72),
+      argument: `Juegos 1er set estimados ~${meanSet1Games.toFixed(1)} (paridad de ranking Δ=${rankGap}). ${pickS1Over ? "Over: set competido entre jugadores parejos." : "Under: dominio del favorito esperado."}`
+    });
+  }
 
   // ── Tie-break en el partido ───────────────────────────────────────────────
   const pTiebreak = clamp(0.18 + clamp(1 - rankGap / 120, 0, 1) * 0.30, 0.15, 0.52);
   const pickTbYes = pTiebreak >= 0.5;
   const tbProb = pickTbYes ? pTiebreak : 1 - pTiebreak;
   const oddsTb = oddsFromProbability(tbProb);
-  picks.push({
-    sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "player_props", marketLabel: "Tie-break en el partido",
-    lineLabel: "tie-break", sideLabel: pickTbYes ? "Sí" : "No",
-    selection: `${pickTbYes ? "Sí" : "No"} habrá tie-break`,
-    modelProb: tbProb, odds: oddsTb, edge: computeEdge(tbProb, oddsTb),
-    confidence: confidenceFromProbability(tbProb, 36, 70),
-    argument: `Tie-break: prob ~${(pTiebreak*100).toFixed(0)}% estimada desde paridad de ranking (Δ=${rankGap}). ${rankGap < 20 ? "Jugadores muy parejos → tie-break probable." : "Brecha de ranking sugiere dominio sin tie-break."}`
-  });
+  if (rankGap < 60 && hasSignal(pTiebreak, 0.05)) {
+    picks.push({
+      sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "player_props", marketLabel: "Tie-break en el partido",
+      lineLabel: "tie-break", sideLabel: pickTbYes ? "Sí" : "No",
+      selection: `${pickTbYes ? "Sí" : "No"} habrá tie-break`,
+      modelProb: tbProb, odds: oddsTb, edge: computeEdge(tbProb, oddsTb),
+      confidence: confidenceFromProbability(tbProb, 36, 70),
+      argument: `Tie-break: prob ~${(pTiebreak*100).toFixed(0)}% estimada desde paridad de ranking (Δ=${rankGap}). ${rankGap < 20 ? "Jugadores muy parejos → tie-break probable." : "Brecha de ranking sugiere dominio sin tie-break."}`
+    });
+  }
 
   return picks;
 }

@@ -452,6 +452,54 @@
     .edge-pill.neg { background: rgba(248,81,73,.1); color: var(--red); }
     .edge-pill.neu { background: var(--bg4); color: var(--text3); }
 
+    /* ── PILL WRAPPERS con etiqueta + info ─────────────────── */
+    .pill-block {
+      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
+    }
+    .pill-row {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .pill-label {
+      font-size: 9px; font-weight: 600; text-transform: uppercase;
+      letter-spacing: .06em; color: var(--text3);
+      text-align: right;
+    }
+    .info-btn {
+      width: 14px; height: 14px; border-radius: 50%;
+      background: var(--bg4); border: 1px solid var(--border2);
+      color: var(--text3);
+      font-size: 9px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      cursor: pointer; flex-shrink: 0;
+      position: relative;
+      font-family: inherit;
+      padding: 0;
+      line-height: 1;
+    }
+    .info-btn:hover { border-color: var(--green); color: var(--green); }
+    .info-btn .tooltip {
+      display: none;
+      position: absolute; bottom: calc(100% + 7px); right: 0;
+      width: 220px;
+      background: var(--bg3); border: 1px solid var(--border2);
+      border-radius: var(--r2);
+      padding: 9px 11px;
+      font-size: 11px; font-weight: 400; line-height: 1.5;
+      color: var(--text2);
+      text-transform: none; letter-spacing: 0;
+      white-space: normal; text-align: left;
+      z-index: 200;
+      box-shadow: 0 4px 16px rgba(0,0,0,.5);
+      pointer-events: none;
+    }
+    .info-btn .tooltip::after {
+      content: "";
+      position: absolute; top: 100%; right: 4px;
+      border: 5px solid transparent;
+      border-top-color: var(--border2);
+    }
+    .info-btn:hover .tooltip { display: block; }
+
     /* ── EXPAND BUTTON ─────────────────────────────────── */
     .expand-btn {
       width: 100%;
@@ -981,9 +1029,28 @@ function renderPickPreviewRow(pick, label) {
         <div class="best-pick-arg">${esc(arg)}</div>
       </div>
       <div class="best-pick-right">
-        <div class="odds-pill">${Number(pick.odds).toFixed(2)}</div>
-        <div class="conf-pill ${confClass(pick.confidence)}">${pick.confidence}%</div>
-        ${edgeTxt ? `<div class="edge-pill ${edgeCls}">${edgeTxt}</div>` : ""}
+        <div class="pill-block">
+          <div class="pill-row">
+            <span class="info-btn">?<span class="tooltip">Cuota decimal de referencia. Multiplica tu apuesta × cuota para saber el retorno total.</span></span>
+            <div class="odds-pill">${Number(pick.odds).toFixed(2)}</div>
+          </div>
+          <div class="pill-label">Cuota</div>
+        </div>
+        <div class="pill-block">
+          <div class="pill-row">
+            <span class="info-btn">?<span class="tooltip">Seguridad del modelo: qué tan lejos está la probabilidad del 50/50. &lt;55% señal débil · 55–70% moderada · &gt;72% fuerte.</span></span>
+            <div class="conf-pill ${confClass(pick.confidence)}">${pick.confidence}%</div>
+          </div>
+          <div class="pill-label">Confianza</div>
+        </div>
+        ${edgeTxt ? `
+        <div class="pill-block">
+          <div class="pill-row">
+            <span class="info-btn">?<span class="tooltip">Ventaja sobre la cuota de mercado: probabilidad del modelo − probabilidad implícita. ≥4% = pick con valor · &lt;0% = sin valor.</span></span>
+            <div class="edge-pill ${edgeCls}">${edgeTxt}</div>
+          </div>
+          <div class="pill-label">Valor</div>
+        </div>` : ""}
       </div>
     </div>`;
 }
@@ -1011,9 +1078,28 @@ function renderPickRows(picks) {
           <div class="pick-row-selection">${esc(p.selection)}${isBest ? " ⭐" : ""}</div>
           ${sub ? `<div class="pick-row-sub">${esc(sub)}</div>` : ""}
         </div>
-        <div class="pick-row-odds">${Number(p.odds).toFixed(2)}</div>
-        <div class="conf-pill ${confClass(p.confidence)}" style="font-size:11px;">${p.confidence}%</div>
-        ${edgeTxt ? `<div class="edge-pill ${edgeCls}">${edgeTxt}</div>` : ""}
+        <div class="pill-block">
+          <div class="pill-row">
+            <span class="info-btn">?<span class="tooltip">Cuota decimal de referencia. Multiplica tu apuesta × cuota para saber el retorno total.</span></span>
+            <div class="odds-pill">${Number(p.odds).toFixed(2)}</div>
+          </div>
+          <div class="pill-label">Cuota</div>
+        </div>
+        <div class="pill-block">
+          <div class="pill-row">
+            <span class="info-btn">?<span class="tooltip">Seguridad del modelo: qué tan lejos está la probabilidad del 50/50. &lt;55% señal débil · 55–70% moderada · &gt;72% fuerte.</span></span>
+            <div class="conf-pill ${confClass(p.confidence)}" style="font-size:11px;">${p.confidence}%</div>
+          </div>
+          <div class="pill-label">Confianza</div>
+        </div>
+        ${edgeTxt ? `
+        <div class="pill-block">
+          <div class="pill-row">
+            <span class="info-btn">?<span class="tooltip">Ventaja sobre la cuota de mercado: probabilidad del modelo − probabilidad implícita. ≥4% = pick con valor · &lt;0% = sin valor.</span></span>
+            <div class="edge-pill ${edgeCls}">${edgeTxt}</div>
+          </div>
+          <div class="pill-label">Valor</div>
+        </div>` : ""}
       </div>`;
   }).join("");
 }

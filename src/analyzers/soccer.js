@@ -1,6 +1,7 @@
 import { clamp, toNum } from "../utils/math.js";
 import { pickSeed } from "../utils/event.js";
 import { normalizeTeamName } from "../utils/event.js";
+import { gamesFromRecord, hasSignal } from "../utils/data.js";
 import {
   findEspnLeaderSide, getEspnCategoryLeader,
   soccerLeaderGoalsPer90, soccerLeaderAssistsPer90, soccerLeaderShotsPer90,
@@ -34,6 +35,10 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
   const homeScore = toNum(home.score);
   const awayScore = toNum(away.score);
   const scoreDiff = homeScore - awayScore;
+
+  const homeGP = gamesFromRecord(homeRecord);
+  const awayGP = gamesFromRecord(awayRecord);
+  const hasRecords = homeGP >= 5 && awayGP >= 5;
 
   const hStr = soccerRecordStrength(homeRecord);
   const aStr = soccerRecordStrength(awayRecord);
@@ -72,111 +77,125 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
   const pickGoalsOver = totRes.pOver >= totRes.pUnder;
   const goalsProb = pickGoalsOver ? totRes.pOver : totRes.pUnder;
   const oddsTot = oddsFromProbability(goalsProb);
-  picks.push(buildTotalsPick({
-    sport: "futbol", league: leagueName, eventName,
-    line: `${lineGNum} goles`, over: pickGoalsOver,
-    ...pick(goalsProb, oddsTot),
-    confidence: confidenceFromProbability(goalsProb, 42, 88),
-    argument: `Proyección xG ~${projectedGoals.toFixed(2)} goles; línea ${lineGNum} (calibración rolling por liga).`,
-    eventDateUtc
-  }));
+  if ((hasRecords || Math.abs(scoreDiff) > 0) && hasSignal(goalsProb)) {
+    picks.push(buildTotalsPick({
+      sport: "futbol", league: leagueName, eventName,
+      line: `${lineGNum} goles`, over: pickGoalsOver,
+      ...pick(goalsProb, oddsTot),
+      confidence: confidenceFromProbability(goalsProb, 42, 88),
+      argument: `Proyección xG ~${projectedGoals.toFixed(2)} goles; línea ${lineGNum} (calibración rolling por liga).`,
+      eventDateUtc
+    }));
+  }
 
   // ── Corners ──────────────────────────────────────────────────────────────
   const meanCorners = clamp(9.25 + (projectedGoals - 2.35) * 0.82 + (hStr + aStr - 1) * 0.55, 6.0, 14.0);
   const lineCn = parseFloat(bookHalfLine(meanCorners));
-  const cornRes = estimatePropProbabilities({ mean: meanCorners, line: lineCn, sport: "futbol", stat: "corners partido", leagueSlug, calibrationStore });
+  const cornRes = estimatePropProbabilities({ mean: meanCorners, line: lineCn, sport: "futbol", stat: "tiros de esquina partido", leagueSlug, calibrationStore });
   const pickCornOver = cornRes.pOver >= cornRes.pUnder;
   const cornProb = pickCornOver ? cornRes.pOver : cornRes.pUnder;
   const oddsCo = oddsFromProbability(cornProb);
-  picks.push({
-    sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "corners", marketLabel: "Tiros de esquina",
-    lineLabel: String(lineCn), sideLabel: pickCornOver ? "Más de" : "Menos de",
-    selection: `${pickCornOver ? "Más de" : "Menos de"} ${lineCn} tiros de esquina`,
-    odds: oddsCo, confidence: confidenceFromProbability(cornProb, 42, 88),
-    modelProb: cornProb, edge: computeEdge(cornProb, oddsCo),
-    argument: `Media corners inferida ~${meanCorners.toFixed(1)} (ritmo ofensivo + forma de equipos).`
-  });
+  if (hasRecords && hasSignal(cornProb, 0.06)) {
+    picks.push({
+      sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "corners", marketLabel: "Tiros de esquina",
+      lineLabel: String(lineCn), sideLabel: pickCornOver ? "Más de" : "Menos de",
+      selection: `${pickCornOver ? "Más de" : "Menos de"} ${lineCn} tiros de esquina`,
+      odds: oddsCo, confidence: confidenceFromProbability(cornProb, 42, 88),
+      modelProb: cornProb, edge: computeEdge(cornProb, oddsCo),
+      argument: `Media corners inferida ~${meanCorners.toFixed(1)} (ritmo ofensivo + forma de equipos).`
+    });
+  }
 
   // ── Handicap asiático ─────────────────────────────────────────────────────
   const pHc = clamp(0.5 + (hStr - aStr) * 0.35, 0.22, 0.85);
   const oddsHc = oddsFromProbability(pHc);
-  picks.push({
-    sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "handicap", marketLabel: "Handicap asiático",
-    lineLabel: "-0.5", sideLabel: favorite,
-    selection: `${favorite} -0.5 handicap asiático`,
-    odds: oddsHc, confidence: confidenceFromProbability(pHc, 40, 86),
-    modelProb: pHc, edge: computeEdge(pHc, oddsHc),
-    argument: `Brecha de forma entre equipos: local=${(hStr*100).toFixed(0)}% vs visitante=${(aStr*100).toFixed(0)}%.`
-  });
+  if (hasRecords && hasSignal(pHc, 0.07)) {
+    picks.push({
+      sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "handicap", marketLabel: "Handicap asiático",
+      lineLabel: "-0.5", sideLabel: favorite,
+      selection: `${favorite} -0.5 handicap asiático`,
+      odds: oddsHc, confidence: confidenceFromProbability(pHc, 40, 86),
+      modelProb: pHc, edge: computeEdge(pHc, oddsHc),
+      argument: `Brecha de forma entre equipos: local=${(hStr*100).toFixed(0)}% vs visitante=${(aStr*100).toFixed(0)}%.`
+    });
+  }
 
   // ── BTTS ──────────────────────────────────────────────────────────────────
   const pBtts = clamp(0.34 + projectedGoals * 0.13 + (hStr + aStr) * 0.12, 0.15, 0.88);
   const pickBtYes = pBtts >= 0.5;
   const bttsProb = pickBtYes ? pBtts : 1 - pBtts;
   const oddsBt = oddsFromProbability(bttsProb);
-  picks.push({
-    sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "btts", marketLabel: "Ambos equipos anotan",
-    lineLabel: "Ambos anotan", sideLabel: pickBtYes ? "Sí" : "No",
-    selection: `${pickBtYes ? "Sí" : "No"} - ambos equipos anotan`,
-    odds: oddsBt, confidence: confidenceFromProbability(bttsProb, 40, 86),
-    modelProb: bttsProb, edge: computeEdge(bttsProb, oddsBt),
-    argument: `Ambos anotan modelado con goles esperados ~${projectedGoals.toFixed(2)} y capacidades ofensivas de ambos equipos.`
-  });
+  if (hasRecords && hasSignal(bttsProb, 0.06)) {
+    picks.push({
+      sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "btts", marketLabel: "Ambos equipos anotan",
+      lineLabel: "Ambos anotan", sideLabel: pickBtYes ? "Sí" : "No",
+      selection: `${pickBtYes ? "Sí" : "No"} - ambos equipos anotan`,
+      odds: oddsBt, confidence: confidenceFromProbability(bttsProb, 40, 86),
+      modelProb: bttsProb, edge: computeEdge(bttsProb, oddsBt),
+      argument: `Ambos anotan modelado con goles esperados ~${projectedGoals.toFixed(2)} y capacidades ofensivas de ambos equipos.`
+    });
+  }
 
   // ── Tarjetas ──────────────────────────────────────────────────────────────
   const meanCards = clamp(4.15 + Math.abs(hStr - aStr) * 1.95 + (projectedGoals - 2.2) * 0.35, 2.5, 8.0);
   const lineCard = 4.5;
-  const cardRes = estimatePropProbabilities({ mean: meanCards, line: lineCard, sport: "futbol", stat: "tarjetas partido", leagueSlug, calibrationStore });
+  const cardRes = estimatePropProbabilities({ mean: meanCards, line: lineCard, sport: "futbol", stat: "tarjetas amarillas partido", leagueSlug, calibrationStore });
   const pickCardOver = cardRes.pOver >= cardRes.pUnder;
   const cardProb = pickCardOver ? cardRes.pOver : cardRes.pUnder;
   const oddsCa = oddsFromProbability(cardProb);
-  picks.push({
-    sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "cards", marketLabel: "Tarjetas amarillas",
-    lineLabel: String(lineCard), sideLabel: pickCardOver ? "Más de" : "Menos de",
-    selection: `${pickCardOver ? "Más de" : "Menos de"} ${lineCard} tarjetas amarillas`,
-    odds: oddsCa, confidence: confidenceFromProbability(cardProb, 40, 86),
-    modelProb: cardProb, edge: computeEdge(cardProb, oddsCa),
-    argument: `Disciplina esperada ~${meanCards.toFixed(1)} tarjetas (tensión del duelo por brecha de forma).`
-  });
+  if (hasRecords && hasSignal(cardProb, 0.06)) {
+    picks.push({
+      sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "cards", marketLabel: "Tarjetas amarillas",
+      lineLabel: String(lineCard), sideLabel: pickCardOver ? "Más de" : "Menos de",
+      selection: `${pickCardOver ? "Más de" : "Menos de"} ${lineCard} tarjetas amarillas`,
+      odds: oddsCa, confidence: confidenceFromProbability(cardProb, 40, 86),
+      modelProb: cardProb, edge: computeEdge(cardProb, oddsCa),
+      argument: `Disciplina esperada ~${meanCards.toFixed(1)} tarjetas (tensión del duelo por brecha de forma).`
+    });
+  }
 
   // ── Goles 1.er tiempo ────────────────────────────────────────────────────
   const mean1h = clamp(projectedGoals * 0.42, 0.3, 2.5);
   const line1h = 1.5;
-  const fhRes = estimatePropProbabilities({ mean: mean1h, line: line1h, sport: "futbol", stat: "goles 1T", leagueSlug, calibrationStore });
+  const fhRes = estimatePropProbabilities({ mean: mean1h, line: line1h, sport: "futbol", stat: "goles en el primer tiempo partido", leagueSlug, calibrationStore });
   const pick1hOver = fhRes.pOver >= fhRes.pUnder;
   const fhProb = pick1hOver ? fhRes.pOver : fhRes.pUnder;
   const odds1t = oddsFromProbability(fhProb);
-  picks.push({
-    sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "first_half", marketLabel: "Goles en el primer tiempo",
-    lineLabel: "1.5 goles primer tiempo", sideLabel: pick1hOver ? "Más de" : "Menos de",
-    selection: `${pick1hOver ? "Más de" : "Menos de"} 1.5 goles en el primer tiempo`,
-    odds: odds1t, confidence: confidenceFromProbability(fhProb, 40, 86),
-    modelProb: fhProb, edge: computeEdge(fhProb, odds1t),
-    argument: `Goles en el primer tiempo estimados ~${mean1h.toFixed(2)} (42% del ritmo total esperado).`
-  });
+  if (hasRecords && hasSignal(fhProb, 0.06)) {
+    picks.push({
+      sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "first_half", marketLabel: "Goles en el primer tiempo",
+      lineLabel: "1.5 goles primer tiempo", sideLabel: pick1hOver ? "Más de" : "Menos de",
+      selection: `${pick1hOver ? "Más de" : "Menos de"} 1.5 goles en el primer tiempo`,
+      odds: odds1t, confidence: confidenceFromProbability(fhProb, 40, 86),
+      modelProb: fhProb, edge: computeEdge(fhProb, odds1t),
+      argument: `Goles en el primer tiempo estimados ~${mean1h.toFixed(2)} (42% del ritmo total esperado).`
+    });
+  }
 
   // ── Total goles equipo local ──────────────────────────────────────────────
   const meanHomeGoals = clamp(projectedGoals * (0.5 + (hStr - 0.5) * 0.25), 0.4, 3.5);
   const lineTt = 1.5;
-  const ttRes = estimatePropProbabilities({ mean: meanHomeGoals, line: lineTt, sport: "futbol", stat: "goles local equipo", leagueSlug, calibrationStore });
+  const ttRes = estimatePropProbabilities({ mean: meanHomeGoals, line: lineTt, sport: "futbol", stat: "goles del equipo local", leagueSlug, calibrationStore });
   const pickTtOver = ttRes.pOver >= ttRes.pUnder;
   const ttProb = pickTtOver ? ttRes.pOver : ttRes.pUnder;
   const oddsTt = oddsFromProbability(ttProb);
-  picks.push({
-    sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "team_totals", marketLabel: "Total goles por equipo",
-    playerName: null, teamLabel: homeName,
-    lineLabel: String(lineTt), sideLabel: pickTtOver ? "Más de" : "Menos de",
-    selection: `${homeName} ${pickTtOver ? "más de" : "menos de"} ${lineTt} goles como local`,
-    odds: oddsTt, confidence: confidenceFromProbability(ttProb, 40, 86),
-    modelProb: ttProb, edge: computeEdge(ttProb, oddsTt),
-    argument: `Total local: media modelo ~${meanHomeGoals.toFixed(2)} goles (ajustado por win% local ${(hStr*100).toFixed(0)}%).`
-  });
+  if (hasRecords && hasSignal(ttProb, 0.06)) {
+    picks.push({
+      sport: "futbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "team_totals", marketLabel: "Total goles por equipo",
+      playerName: null, teamLabel: homeName,
+      lineLabel: String(lineTt), sideLabel: pickTtOver ? "Más de" : "Menos de",
+      selection: `${homeName} ${pickTtOver ? "más de" : "menos de"} ${lineTt} goles como local`,
+      odds: oddsTt, confidence: confidenceFromProbability(ttProb, 40, 86),
+      modelProb: ttProb, edge: computeEdge(ttProb, oddsTt),
+      argument: `Total local: media modelo ~${meanHomeGoals.toFixed(2)} goles (ajustado por win% local ${(hStr*100).toFixed(0)}%).`
+    });
+  }
 
   // Pool de piernas para combo + props de jugador desde ESPN summary
   const legPool = [

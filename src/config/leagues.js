@@ -1,6 +1,8 @@
 export const SOCCER_LEAGUES = [
   "esp.1", "eng.1", "ger.1", "ita.1", "fra.1", "ned.1", "por.1", "bel.1",
-  "tur.1", "aut.1", "uefa.champions", "uefa.europa", "conmebol.libertadores",
+  "tur.1", "aut.1",
+  "uefa.champions", "uefa.europa",
+  "conmebol.libertadores", "conmebol.sudamericana", "bra.1",
   "usa.1", "mex.1", "col.1"
 ];
 
@@ -8,8 +10,10 @@ export const SOCCER_LEAGUE_LABELS = {
   "esp.1": "LaLiga", "eng.1": "Premier League", "ger.1": "Bundesliga",
   "ita.1": "Serie A", "fra.1": "Ligue 1", "ned.1": "Eredivisie",
   "por.1": "Liga Portugal", "bel.1": "Pro League Belgica", "tur.1": "Super Lig",
-  "aut.1": "Bundesliga Austria", "uefa.champions": "UEFA Champions League",
-  "uefa.europa": "UEFA Europa League", "conmebol.libertadores": "Copa Libertadores",
+  "aut.1": "Bundesliga Austria",
+  "uefa.champions": "UEFA Champions League", "uefa.europa": "UEFA Europa League",
+  "conmebol.libertadores": "Copa Libertadores", "conmebol.sudamericana": "Copa Sudamericana",
+  "bra.1": "Brasileirao Serie A",
   "usa.1": "MLS", "mex.1": "Liga MX", "col.1": "Primera A Colombia"
 };
 

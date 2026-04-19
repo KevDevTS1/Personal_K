@@ -1,6 +1,8 @@
 import { bogotaTodayKey, bogotaDayKey } from "../utils/time.js";
 import { fetchScoreboard, enrichEspnFeedsWithSummaries } from "../data/espn.js";
 import { fetchSportsDbEvents } from "../data/sportsdb.js";
+import { buildOddsStore, applyRealOddsToPickList } from "../data/odds.js";
+import { buildMlbStore, lookupMlbGame } from "../data/mlb.js";
 import { getLeagueDisplayName, SOCCER_LEAGUES, BASKET_LEAGUES, TENNIS_LEAGUES, BASEBALL_LEAGUES, SPORTSDB_SPORTS } from "../config/leagues.js";
 import { isEventLive, getLiveStatusLabel } from "../utils/event.js";
 import { analyzeSoccerEvent } from "../analyzers/soccer.js";
@@ -27,21 +29,36 @@ export async function collectAllEvents(targetDateKey = null) {
     tasks.push(fetchScoreboard("baseball", league, dateKey).then((data) => ({ sport: "beisbol", league, dateKey, data })).catch(() => null));
   }
 
-  const espnFeeds = (await Promise.all(tasks)).filter(Boolean);
-
   const dbTasks = SPORTSDB_SPORTS.map((sportName) =>
     fetchSportsDbEvents(dateKey, sportName).then((data) => ({ sportName, dateKey, data })).catch(() => null)
   );
-  const sportDbFeeds = (await Promise.all(dbTasks)).filter(Boolean);
+
+  // Fetch ESPN, SportsDB, and MLB data all in parallel
+  const [espnRaw, sportDbFeeds, mlbStore] = await Promise.all([
+    Promise.all(tasks),
+    Promise.all(dbTasks),
+    buildMlbStore(dateKey).catch(() => new Map()),
+  ]);
+
+  const espnFeeds = espnRaw.filter(Boolean);
+  const filteredDbFeeds = sportDbFeeds.filter(Boolean);
 
   await enrichEspnFeedsWithSummaries(espnFeeds);
 
-  return { espnFeeds, sportDbFeeds };
+  // Determine which leagues actually have events today, then fetch real odds
+  const activeLeagueSlugs = espnFeeds
+    .filter(f => (f.data?.events?.length || 0) > 0)
+    .map(f => f.league);
+
+  const oddsStore = await buildOddsStore(activeLeagueSlugs, dateKey).catch(() => new Map());
+
+  return { espnFeeds, sportDbFeeds: filteredDbFeeds, oddsStore, mlbStore };
 }
 
 export function createPicksFromEvents(feedSets, targetDateKey = null, calibrationStore = null, options = {}) {
   const { onlyLive = false } = options;
   const dateKey = targetDateKey || bogotaTodayKey(0);
+  const { oddsStore, mlbStore } = feedSets;
   const picks = [];
 
   for (const feed of feedSets.espnFeeds) {
@@ -51,31 +68,42 @@ export function createPicksFromEvents(feedSets, targetDateKey = null, calibratio
       const summary = feed.summariesByEventId?.[event.id] || null;
       let generated = [];
 
-      if (feed.sport === "futbol") generated = analyzeSoccerEvent(event, leagueName, feed.dateKey, summary, calibrationStore, feed.league);
-      if (feed.sport === "baloncesto") generated = analyzeBasketballEvent(event, leagueName, feed.league, feed.dateKey, summary, calibrationStore);
-      if (feed.sport === "tenis") generated = analyzeTennisEvent(event, leagueName, feed.dateKey);
-      if (feed.sport === "beisbol") generated = analyzeBaseballEvent(event, leagueName, feed.league, feed.dateKey, summary, calibrationStore);
+      if (feed.sport === "futbol") {
+        generated = analyzeSoccerEvent(event, leagueName, feed.dateKey, summary, calibrationStore, feed.league);
+      } else if (feed.sport === "baloncesto") {
+        generated = analyzeBasketballEvent(event, leagueName, feed.league, feed.dateKey, summary, calibrationStore);
+      } else if (feed.sport === "tenis") {
+        generated = analyzeTennisEvent(event, leagueName, feed.dateKey);
+      } else if (feed.sport === "beisbol") {
+        // Look up MLB real data (probable pitchers + team batting) for this event
+        const comp = event.competitions?.[0];
+        const homeC = comp?.competitors?.find(c => c.homeAway === "home");
+        const awayC = comp?.competitors?.find(c => c.homeAway === "away");
+        const hName = homeC?.team?.displayName || homeC?.team?.shortDisplayName || "";
+        const aName = awayC?.team?.displayName || awayC?.team?.shortDisplayName || "";
+        const mlbGameData = lookupMlbGame(mlbStore, hName, aName);
+        generated = analyzeBaseballEvent(event, leagueName, feed.league, feed.dateKey, summary, calibrationStore, mlbGameData);
+      }
 
-      // Extraer equipos y marcador del evento ESPN
       const comp = event.competitions?.[0];
-      const homeC = comp?.competitors?.find((c) => c.homeAway === "home");
-      const awayC = comp?.competitors?.find((c) => c.homeAway === "away");
+      const homeC = comp?.competitors?.find(c => c.homeAway === "home");
+      const awayC = comp?.competitors?.find(c => c.homeAway === "away");
       const eventMeta = {
-        homeTeam: homeC?.team?.shortDisplayName || homeC?.team?.displayName || null,
-        awayTeam: awayC?.team?.shortDisplayName || awayC?.team?.displayName || null,
-        homeScore: homeC?.score != null ? String(homeC.score) : null,
-        awayScore: awayC?.score != null ? String(awayC.score) : null,
-        eventStatus: comp?.status?.type?.state || null
+        homeTeam:    homeC?.team?.shortDisplayName || homeC?.team?.displayName || null,
+        awayTeam:    awayC?.team?.shortDisplayName || awayC?.team?.displayName || null,
+        homeScore:   homeC?.score != null ? String(homeC.score) : null,
+        awayScore:   awayC?.score != null ? String(awayC.score) : null,
+        eventStatus: comp?.status?.type?.state || null,
       };
 
-      picks.push(...generated.map((p) => ({
+      picks.push(...generated.map(p => ({
         ...p,
         ...eventMeta,
         league: leagueName,
         leagueSlug: feed.league,
         sourceDateKey: feed.dateKey,
         forDate: dateKey,
-        liveStatus: isEventLive(event) ? getLiveStatusLabel(event) : null
+        liveStatus: isEventLive(event) ? getLiveStatusLabel(event) : null,
       })));
     }
   }
@@ -83,18 +111,18 @@ export function createPicksFromEvents(feedSets, targetDateKey = null, calibratio
   if (!onlyLive) {
     for (const feed of feedSets.sportDbFeeds) {
       for (const event of feed.data?.events || []) {
-        picks.push(...analyzeSportsDbEvent(event, feed.sportName, feed.dateKey).map((p) => ({
+        picks.push(...analyzeSportsDbEvent(event, feed.sportName, feed.dateKey).map(p => ({
           ...p,
           sourceDateKey: feed.dateKey,
-          forDate: dateKey
+          forDate: dateKey,
         })));
       }
     }
   }
 
-  return picks
-    .filter((p) => p && p.event && p.selection && p.eventDateUtc)
-    .filter((p) => {
+  const filtered = picks
+    .filter(p => p && p.event && p.selection && p.eventDateUtc)
+    .filter(p => {
       if (onlyLive) return true;
       const key = bogotaDayKey(p.eventDateUtc);
       if (key === dateKey) return true;
@@ -105,4 +133,9 @@ export function createPicksFromEvents(feedSets, targetDateKey = null, calibratio
       const withId = { ...p, id: `${Date.now()}-${idx}`, odds: Number((p.odds ?? 1.8).toFixed(2)) };
       return enrichPick(withId);
     });
+
+  // Apply real bookmaker odds (moneyline + totals) and recompute edge
+  applyRealOddsToPickList(filtered, oddsStore);
+
+  return filtered;
 }

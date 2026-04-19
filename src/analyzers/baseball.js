@@ -1,5 +1,6 @@
 import { clamp, toNum } from "../utils/math.js";
 import { normalizeTeamName, pickPlayerName, pickSeed } from "../utils/event.js";
+import { gamesFromRecord, hasSignal } from "../utils/data.js";
 import {
   soccerRecordStrength, findEspnLeaderSide, getEspnCategoryLeader,
   parseMlbTeamBattingRates, getMlbPitcherKProjection, getRawEspnLeaderRow, getMlbTeamGamesPlayed
@@ -12,7 +13,7 @@ function pp(prob, odds) {
   return { modelProb: prob, odds, edge: computeEdge(prob, odds) };
 }
 
-export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, summary = null, calibrationStore = null) {
+export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, summary = null, calibrationStore = null, mlbGameData = null) {
   const comp = event.competitions?.[0];
   if (!comp?.competitors?.length) return [];
   const home = comp.competitors.find((c) => c.homeAway === "home");
@@ -30,6 +31,10 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   const diff = homeScore - awayScore;
 
   // Win probability desde records reales de temporada
+  const homeGP = gamesFromRecord(home.records?.[0]?.summary || "");
+  const awayGP = gamesFromRecord(away.records?.[0]?.summary || "");
+  const hasRecords = homeGP >= 5 && awayGP >= 5;
+
   const hWR = soccerRecordStrength(home.records?.[0]?.summary || "0-0");
   const aWR = soccerRecordStrength(away.records?.[0]?.summary || "0-0");
   const pHomeWin = winProbFromRecords(hWR, aWR, 0.03);
@@ -39,16 +44,32 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   const pFav = clamp(Math.max(pHomeWin, 1 - pHomeWin), 0.35, 0.82);
 
   const favSide = summary && favTeamId ? findEspnLeaderSide(summary, favTeamId) : null;
-  const rates = summary && favTeamId ? parseMlbTeamBattingRates(summary, favTeamId) : null;
+  const espnRates = summary && favTeamId ? parseMlbTeamBattingRates(summary, favTeamId) : null;
   const gp = summary && favTeamId ? getMlbTeamGamesPlayed(summary, favTeamId) : 1;
+
+  // ── MLB Stats API data (preferred over ESPN summary when available) ────────
+  const favIsHome = pHomeWin >= 0.5;
+  const mlbFavBatting = favIsHome ? mlbGameData?.homeBatting : mlbGameData?.awayBatting;
+  const mlbFavPitcher = favIsHome ? mlbGameData?.homePitcher : mlbGameData?.awayPitcher;
+  // Merge: MLB Stats API rates override ESPN if available
+  const rates = mlbFavBatting || espnRates;
+  const hasRates = rates != null && Number.isFinite(rates.hitsPerGame);
 
   const avgH = favSide ? getEspnCategoryLeader(favSide, "avg") : null;
   const rbiRow = favSide ? getRawEspnLeaderRow(favSide, "RBIs") : null;
   const kRow = favSide ? getRawEspnLeaderRow(favSide, "strikeouts") : null;
   const kProj = kRow ? getMlbPitcherKProjection(kRow) : { kPerStart: null, seasonK: null };
 
+  // Real probable pitcher from MLB Stats API supersedes ESPN summary
+  const realKPerStart = mlbFavPitcher?.kPerStart;
+  const hasPitcher = Number.isFinite(realKPerStart) || (kRow != null && Number.isFinite(kProj.kPerStart));
+  const kPerStartFinal = Number.isFinite(realKPerStart) ? realKPerStart : (kProj.kPerStart || null);
+  const pitcherName = mlbFavPitcher?.name || kRow?.athlete?.displayName || `Abridor de ${favorite}`;
+  const pitcherSeasonK = mlbFavPitcher?.strikeOuts || kProj.seasonK;
+  const pitcherEra = mlbFavPitcher?.era ?? null;
+
   const hitterPlayer = avgH?.player || pickPlayerName(event, favorite, `Bateador principal de ${favorite}`);
-  const pitcherPlayer = kRow?.athlete?.displayName || `Abridor de ${favorite}`;
+  const pitcherPlayer = pitcherName;
 
   const hitsPg = rates?.hitsPerGame;
   const lineHits = Number.isFinite(hitsPg) ? bookHalfLine(hitsPg) : "8.5";
@@ -56,21 +77,28 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   const pickHitsOver = hitsRes.pOver >= hitsRes.pUnder;
   const hitsProb = pickHitsOver ? hitsRes.pOver : hitsRes.pUnder;
 
-  const lineK = Number.isFinite(kProj.kPerStart) ? bookHalfLine(kProj.kPerStart) : "6.5";
-  const kRes = estimatePropProbabilities({ mean: kProj.kPerStart || 6.5, line: parseFloat(lineK), sport: "beisbol", stat: "ponches del lanzador", leagueSlug, calibrationStore });
+  const lineK = Number.isFinite(kPerStartFinal) ? bookHalfLine(kPerStartFinal) : "6.5";
+  const kRes = estimatePropProbabilities({ mean: kPerStartFinal || 6.5, line: parseFloat(lineK), sport: "beisbol", stat: "ponches del lanzador", leagueSlug, calibrationStore });
   const pickKOver = kRes.pOver >= kRes.pUnder;
   const kProb = pickKOver ? kRes.pOver : kRes.pUnder;
 
   const rbiVal = toNum(rbiRow?.statistics?.find((x) => x.name === "RBIs")?.value, NaN);
-  const rbiPg = Number.isFinite(rbiVal) && gp > 0 ? rbiVal / gp : 0;
+  // Use MLB Stats API rbi/game if available
+  const rbiPgMlb = mlbFavBatting?.rbiPerGame;
+  const rbiPg = Number.isFinite(rbiPgMlb) && rbiPgMlb > 0
+    ? rbiPgMlb
+    : (Number.isFinite(rbiVal) && gp > 0 ? rbiVal / gp : 0);
   const hrrEst = clamp(rbiPg > 0 ? rbiPg * 2.4 + 0.6 : 2.5, 1.5, 4.5);
   const lineHrr = bookHalfLine(hrrEst);
 
+  const hrPerGame = mlbFavBatting?.hrPerGame ?? 0;
+  const batAvg = mlbFavBatting?.avg ?? avgH?.value ?? 0.250;
   const slug = toNum(rbiRow?.statistics?.find((x) => x.name === "homeRuns")?.value, 0);
-  const tbEst = clamp(1.2 + slug * 0.15 + (avgH?.value || 0) * 6, 1.5, 4.5);
+  const tbEst = clamp(1.2 + (hrPerGame || slug * 0.15) + batAvg * 6, 1.5, 4.5);
   const lineTb = bookHalfLine(tbEst);
 
-  const runsPgTeam = rates?.runsPerGame;
+  // MLB Stats API runs/game takes priority over ESPN
+  const runsPgTeam = mlbFavBatting?.runsPerGame ?? rates?.runsPerGame;
   const lineRnTeam = Number.isFinite(runsPgTeam) ? bookHalfLine(runsPgTeam) : "4.5";
   let runsTeamProb = null, oddsRunsTeam = null, pickRunsTeamOver = true;
   if (Number.isFinite(runsPgTeam) && runsPgTeam > 0) {
@@ -121,55 +149,78 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   const totProb = clamp(0.5 + (expRuns - 8.5) * 0.03, 0.35, 0.72);
   const oddsTot = oddsFromProbability(overTotal ? totProb : 1 - totProb);
 
-  const picks = [
-    buildMoneylinePick({
-      sport: "beisbol", league: leagueName, eventName,
-      favorite, underdog: favorite === homeName ? awayName : homeName,
-      ...pp(pFav, oddsMl),
-      confidence: confidenceFromProbability(pFav, 38, 86),
-      argument: `Win% local=${(hWR*100).toFixed(0)}%, visitante=${(aWR*100).toFixed(0)}% (records temporada ESPN).`,
-      eventDateUtc
-    }),
-    buildTotalsPick({
+  const picks = [];
+
+  // Moneyline always
+  picks.push(buildMoneylinePick({
+    sport: "beisbol", league: leagueName, eventName,
+    favorite, underdog: favorite === homeName ? awayName : homeName,
+    ...pp(pFav, oddsMl),
+    confidence: confidenceFromProbability(pFav, 38, 86),
+    argument: `Win% local=${(hWR*100).toFixed(0)}%, visitante=${(aWR*100).toFixed(0)}% (records temporada ESPN).`,
+    eventDateUtc
+  }));
+
+  // Total carreras: only if hasSignal
+  if (hasSignal(overTotal ? totProb : 1 - totProb, 0.04)) {
+    picks.push(buildTotalsPick({
       sport: "beisbol", league: leagueName, eventName,
       line: "8.5 carreras", over: overTotal,
       ...pp(overTotal ? totProb : 1 - totProb, oddsTot),
       confidence: confidenceFromProbability(overTotal ? totProb : 1 - totProb, 38, 82),
       argument: `Carreras esperadas ~${expRuns.toFixed(1)} (2× runs/partido del equipo favorito).`,
       eventDateUtc
-    }),
-    buildPropPick({
+    }));
+  }
+
+  // Hits equipo: only if hasRates
+  if (hasRates) {
+    picks.push(buildPropPick({
       sport: "beisbol", league: leagueName, eventName,
       player: favorite, propType: "team", teamLabel: favorite,
       stat: "golpes de hit del equipo", line: lineHits, over: pickHitsOver,
       ...pp(hitsProb, oddsHits),
       confidence: confidenceFromProbability(hitsProb, 40, 86),
-      argument: rates ? `Hits por partido del equipo (ESPN): ~${hitsPg.toFixed(2)}.` : "Prop derivado de contacto ofensivo vs pitcheo rival.",
+      argument: `Hits/partido del equipo: ~${hitsPg.toFixed(2)}${mlbFavBatting ? ` (MLB Stats API, AVG ${batAvg.toFixed(3)})` : " (ESPN)"}.`,
       eventDateUtc
-    }),
-    buildPropPick({
+    }));
+  }
+
+  // Ponches lanzador: only if hasPitcher
+  if (hasPitcher) {
+    picks.push(buildPropPick({
       sport: "beisbol", league: leagueName, eventName,
       player: pitcherPlayer, stat: "ponches del lanzador", line: lineK, over: pickKOver,
       ...pp(kProb, oddsK),
       confidence: confidenceFromProbability(kProb, 40, 86),
-      argument: kProj.seasonK ? `Líder en ponches del equipo (ESPN): ${kProj.seasonK} ponches en la temporada; ~${(kProj.kPerStart||0).toFixed(1)} por salida.` : "Prop de ponches por rendimiento del abridor.",
+      argument: pitcherSeasonK
+        ? `${pitcherPlayer}: ${pitcherSeasonK} K en temporada, ~${(kPerStartFinal||0).toFixed(1)}/salida${pitcherEra != null ? `, ERA ${Number(pitcherEra).toFixed(2)}` : ""}.`
+        : `Prop de ponches por rendimiento del abridor (${pitcherPlayer}).`,
       eventDateUtc
-    }),
-    ...(runsTeamProb != null && oddsRunsTeam ? [buildPropPick({
+    }));
+  }
+
+  // Carreras equipo: only if hasRates and real runs data
+  if (hasRates && runsTeamProb != null && oddsRunsTeam && Number.isFinite(runsPgTeam)) {
+    picks.push(buildPropPick({
       sport: "beisbol", league: leagueName, eventName,
       player: favorite, propType: "team", teamLabel: favorite,
       stat: "carreras del equipo", line: lineRnTeam, over: pickRunsTeamOver,
       ...pp(runsTeamProb, oddsRunsTeam),
       confidence: confidenceFromProbability(runsTeamProb, 40, 85),
-      argument: rates?.runsPerGame ? `Carreras por partido del equipo (ESPN): ~${runsPgTeam.toFixed(2)} vs línea ${lineRnTeam}.` : "Total de carreras del equipo favorito.",
+      argument: `Carreras por partido del equipo (ESPN): ~${runsPgTeam.toFixed(2)} vs línea ${lineRnTeam}.`,
       eventDateUtc
-    })] : []),
-    buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "dobles del bateador", line: lineDbl, over: pickDblOver, ...pp(dblProb, oddsDbl), confidence: confidenceFromProbability(dblProb, 38, 84), argument: `Dobles por partido estimados: ~${dblPg.toFixed(2)} (ESPN).`, eventDateUtc }),
-    buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "carreras impulsadas", line: lineRbi, over: pickRbiOver, ...pp(rbiProb, oddsRbi), confidence: confidenceFromProbability(rbiProb, 38, 84), argument: rbiPg ? `Carreras impulsadas por partido del líder ESPN: ~${rbiPg.toFixed(2)}.` : "Carreras impulsadas por oportunidades con corredores en base.", eventDateUtc }),
-    buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "hits más carreras más impulsadas", line: lineHrr, over: pickHrrOver, ...pp(hrrProb, oddsHrr), confidence: confidenceFromProbability(hrrProb, 38, 84), argument: `Hits + Carreras + Impulsadas combinados: media ~${hrrEst.toFixed(2)} vs línea ${lineHrr}.`, eventDateUtc }),
-    buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "carreras anotadas", line: "0.5", over: pickRunPOver, ...pp(runProb, oddsRun), confidence: confidenceFromProbability(runProb, 38, 82), argument: `Carreras anotadas: media ~${runScoredMean.toFixed(2)} vs 0.5.`, eventDateUtc }),
-    buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "bases totales alcanzadas", line: lineTb, over: pickTbOver, ...pp(tbProb, oddsTb), confidence: confidenceFromProbability(tbProb, 38, 84), argument: avgH ? `Bases totales: ~${tbEst.toFixed(2)} (promedio de bateo ESPN ${avgH.displayValue || avgH.value}).` : "Bases totales por contacto y enfrentamiento.", eventDateUtc })
-  ];
+    }));
+  }
+
+  // Batter props: only if real batter data from ESPN
+  if (Number.isFinite(rbiPg) && rbiPg > 0) {
+    picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "dobles del bateador", line: lineDbl, over: pickDblOver, ...pp(dblProb, oddsDbl), confidence: confidenceFromProbability(dblProb, 38, 84), argument: `Dobles por partido estimados: ~${dblPg.toFixed(2)} (ESPN).`, eventDateUtc }));
+    picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "carreras impulsadas", line: lineRbi, over: pickRbiOver, ...pp(rbiProb, oddsRbi), confidence: confidenceFromProbability(rbiProb, 38, 84), argument: `Carreras impulsadas por partido del líder ESPN: ~${rbiPg.toFixed(2)}.`, eventDateUtc }));
+    picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "hits más carreras más impulsadas", line: lineHrr, over: pickHrrOver, ...pp(hrrProb, oddsHrr), confidence: confidenceFromProbability(hrrProb, 38, 84), argument: `Hits + Carreras + Impulsadas combinados: media ~${hrrEst.toFixed(2)} vs línea ${lineHrr}.`, eventDateUtc }));
+    picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "carreras anotadas", line: "0.5", over: pickRunPOver, ...pp(runProb, oddsRun), confidence: confidenceFromProbability(runProb, 38, 82), argument: `Carreras anotadas: media ~${runScoredMean.toFixed(2)} vs 0.5.`, eventDateUtc }));
+    picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "bases totales alcanzadas", line: lineTb, over: pickTbOver, ...pp(tbProb, oddsTb), confidence: confidenceFromProbability(tbProb, 38, 84), argument: avgH ? `Bases totales: ~${tbEst.toFixed(2)} (promedio de bateo ESPN ${avgH.displayValue || avgH.value}).` : "Bases totales por contacto y enfrentamiento.", eventDateUtc }));
+  }
 
   // ── Combinada SGP x2 ─────────────────────────────────────────────────────
   const mlbLegs = [

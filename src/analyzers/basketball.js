@@ -1,5 +1,6 @@
 import { clamp, toNum } from "../utils/math.js";
 import { normalizeTeamName, pickPlayerName, pickSeed } from "../utils/event.js";
+import { gamesFromRecord, hasSignal } from "../utils/data.js";
 import { soccerRecordStrength, findEspnLeaderSide, getEspnCategoryLeader, parseNbaTeamSeasonStatsFromBoxscore } from "../data/espn.js";
 import { estimatePropProbabilities } from "../model/props.js";
 import { oddsFromProbability, confidenceFromProbability, confidenceFromCombo, computeEdge, bookHalfLine, winProbFromRecords } from "../model/scoring.js";
@@ -27,6 +28,10 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
   const diff = homeScore - awayScore;
 
   // Win probability desde records reales de temporada
+  const homeGP = gamesFromRecord(home.records?.[0]?.summary || "");
+  const awayGP = gamesFromRecord(away.records?.[0]?.summary || "");
+  const hasRecords = homeGP >= 5 && awayGP >= 5;
+
   const hWR = soccerRecordStrength(home.records?.[0]?.summary || "0-0");
   const aWR = soccerRecordStrength(away.records?.[0]?.summary || "0-0");
   const pHomeWin = winProbFromRecords(hWR, aWR, 0.03);
@@ -94,31 +99,35 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
   const spreadLine = bookHalfLine(spreadEst);
   const pSpread = clamp(pFavNba - 0.04, 0.30, 0.78);
   const oddsSp = oddsFromProbability(pSpread);
-  picks.push({
-    sport: "baloncesto", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "spread", marketLabel: "Spread / Handicap",
-    lineLabel: `-${spreadLine}`, sideLabel: favorite,
-    selection: `${favorite} -${spreadLine}`,
-    ...p2pick(pSpread, oddsSp),
-    confidence: confidenceFromProbability(pSpread, 38, 84),
-    argument: `Spread calculado desde win% temporada: ${(hWR*100).toFixed(0)}% local vs ${(aWR*100).toFixed(0)}% visitante → línea estimada -${spreadLine}.`
-  });
+  if (hasRecords && hasSignal(pSpread, 0.06)) {
+    picks.push({
+      sport: "baloncesto", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "spread", marketLabel: "Spread / Handicap",
+      lineLabel: `-${spreadLine}`, sideLabel: favorite,
+      selection: `${favorite} -${spreadLine}`,
+      ...p2pick(pSpread, oddsSp),
+      confidence: confidenceFromProbability(pSpread, 38, 84),
+      argument: `Spread calculado desde win% temporada: ${(hWR*100).toFixed(0)}% local vs ${(aWR*100).toFixed(0)}% visitante → línea estimada -${spreadLine}.`
+    });
+  }
 
   // ── Total del partido ────────────────────────────────────────────────────
   const gameTotProb = Number.isFinite(sumPpg) && sumPpg > 180
     ? clamp(0.5 + (sumPpg - totNum) * 0.04, 0.35, 0.75)
     : 0.52;
   const oddsGame = oddsFromProbability(overGame ? gameTotProb : 1 - gameTotProb);
-  picks.push(buildTotalsPick({
-    sport: "baloncesto", league: leagueName, eventName,
-    line: lineGameTot, over: overGame,
-    ...p2pick(overGame ? gameTotProb : 1 - gameTotProb, oddsGame),
-    confidence: confidenceFromProbability(overGame ? gameTotProb : 1 - gameTotProb, 40, 85),
-    argument: sumPpg > 180
-      ? `PPG combinado de temporada ~${sumPpg.toFixed(1)} puntos vs línea ${lineGameTot}.`
-      : "Total estimado por promedio de la liga; sin PPG disponible de ESPN.",
-    eventDateUtc
-  }));
+  if ((sumPpg > 180 || hasRecords) && hasSignal(gameTotProb, 0.04)) {
+    picks.push(buildTotalsPick({
+      sport: "baloncesto", league: leagueName, eventName,
+      line: lineGameTot, over: overGame,
+      ...p2pick(overGame ? gameTotProb : 1 - gameTotProb, oddsGame),
+      confidence: confidenceFromProbability(overGame ? gameTotProb : 1 - gameTotProb, 40, 85),
+      argument: sumPpg > 180
+        ? `PPG combinado de temporada ~${sumPpg.toFixed(1)} puntos vs línea ${lineGameTot}.`
+        : "Total estimado por promedio de la liga; sin PPG disponible de ESPN.",
+      eventDateUtc
+    }));
+  }
 
   // ── Total 1er tiempo ─────────────────────────────────────────────────────
   const meanHalfTot = Number.isFinite(totNum) && totNum > 50 ? totNum * 0.485 : 108;
@@ -127,15 +136,19 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
   const pickHalfOver = fhRes.pOver >= fhRes.pUnder;
   const halfProb = pickHalfOver ? fhRes.pOver : fhRes.pUnder;
   const oddsHalf = oddsFromProbability(halfProb);
-  picks.push({
-    sport: "baloncesto", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
-    market: "first_half", marketLabel: "Totales 1.er tiempo",
-    lineLabel: `${lineHalfNum} pts`, sideLabel: pickHalfOver ? "Over" : "Under",
-    selection: `${pickHalfOver ? "Over" : "Under"} ${lineHalfNum} puntos (1.er tiempo)`,
-    ...p2pick(halfProb, oddsHalf),
-    confidence: confidenceFromProbability(halfProb, 40, 85),
-    argument: `1T estimado ~${meanHalfTot.toFixed(1)} pts (48.5% del total esperado).`
-  });
+  if (sumPpg > 180 && hasSignal(halfProb, 0.05)) {
+    picks.push({
+      sport: "baloncesto", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+      market: "first_half", marketLabel: "Totales 1.er tiempo",
+      lineLabel: `${lineHalfNum} pts`, sideLabel: pickHalfOver ? "Over" : "Under",
+      selection: `${pickHalfOver ? "Over" : "Under"} ${lineHalfNum} puntos (1.er tiempo)`,
+      ...p2pick(halfProb, oddsHalf),
+      confidence: confidenceFromProbability(halfProb, 40, 85),
+      argument: `1T estimado ~${meanHalfTot.toFixed(1)} pts (48.5% del total esperado).`
+    });
+  }
+
+  const hasSummaryData = Number.isFinite(ptsL?.value);
 
   // ── Props individuales ────────────────────────────────────────────────────
   function makePropPick({ playerName, stat, line, meanVal, defaultMean, argExtra, shortLabel }) {
@@ -156,26 +169,31 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
     return { pick: propObj, prob, odds, short: `${playerName} ${over ? "O" : "U"} ${line} ${shortLabel}` };
   }
 
-  const teamAstRes = estimatePropProbabilities({ mean: teamAstAvg || 26.5, line: parseFloat(lineTeamAst), sport: "baloncesto", stat: "asistencias-equipo", leagueSlug, calibrationStore });
+  const teamAstRes = estimatePropProbabilities({ mean: teamAstAvg || 26.5, line: parseFloat(lineTeamAst), sport: "baloncesto", stat: "asistencias del equipo", leagueSlug, calibrationStore });
   const pickTAstOver = teamAstRes.pOver >= teamAstRes.pUnder;
   const tAstProb = pickTAstOver ? teamAstRes.pOver : teamAstRes.pUnder;
   const oddsTa = oddsFromProbability(tAstProb);
-  picks.push(buildPropPick({
-    sport: "baloncesto", league: leagueName, eventName, player: favorite,
-    propType: "team", teamLabel: favorite, stat: "asistencias-equipo", line: lineTeamAst, over: pickTAstOver,
-    ...p2pick(tAstProb, oddsTa),
-    confidence: confidenceFromProbability(tAstProb, 40, 86),
-    argument: Number.isFinite(teamAstAvg) ? `Media asistencias de equipo (ESPN): ~${teamAstAvg.toFixed(1)}/partido.` : "Prop de equipo por tendencia de creación de tiro.",
-    eventDateUtc
-  }));
+  if (Number.isFinite(teamAstAvg) && hasSignal(tAstProb, 0.05)) {
+    picks.push(buildPropPick({
+      sport: "baloncesto", league: leagueName, eventName, player: favorite,
+      propType: "team", teamLabel: favorite, stat: "asistencias del equipo", line: lineTeamAst, over: pickTAstOver,
+      ...p2pick(tAstProb, oddsTa),
+      confidence: confidenceFromProbability(tAstProb, 40, 86),
+      argument: `Media asistencias de equipo (ESPN): ~${teamAstAvg.toFixed(1)}/partido.`,
+      eventDateUtc
+    }));
+  }
 
-  const propsList = [
-    makePropPick({ playerName: propPlayerPts, stat: "puntos", line: linePts, meanVal: ptsL?.value, defaultMean: 20.5, shortLabel: "puntos", argExtra: ptsL ? `Líder anotador (ESPN): ${propPlayerPts}, ~${ptsL.value.toFixed(1)} puntos por partido.` : "Sin resumen ESPN; línea conservadora." }),
-    makePropPick({ playerName: propPlayerReb, stat: "rebotes", line: lineReb, meanVal: rebL?.value, defaultMean: 5.5, shortLabel: "rebotes", argExtra: rebL ? `Líder en rebotes (ESPN): ${propPlayerReb}, ~${rebL.value.toFixed(1)} rebotes por partido.` : "Sin resumen ESPN." }),
-    makePropPick({ playerName: propPlayerAst, stat: "asistencias", line: lineAst, meanVal: astL?.value, defaultMean: 5.5, shortLabel: "asistencias", argExtra: astL ? `Líder en asistencias (ESPN): ${propPlayerAst}, ~${astL.value.toFixed(1)} asistencias por partido.` : "Sin resumen ESPN." }),
-    makePropPick({ playerName: propPlayerPts, stat: "puntos más rebotes más asistencias", line: linePra, meanVal: praEst, defaultMean: 30, shortLabel: "pts+reb+ast", argExtra: sameStar ? `Suma puntos, rebotes y asistencias del mismo jugador (ESPN): ~${praEst.toFixed(1)}.` : `Suma estimada ~${praEst.toFixed(1)} desde promedio anotador.` }),
-    makePropPick({ playerName: propPlayerPts, stat: "triples anotados", line: lineTri, meanVal: triEst, defaultMean: 2.5, shortLabel: "triples", argExtra: `Triples estimados ~${triEst.toFixed(1)} por partido (14% del volumen anotador).` })
-  ];
+  const propsList = [];
+  if (hasSummaryData) {
+    propsList.push(
+      makePropPick({ playerName: propPlayerPts, stat: "puntos", line: linePts, meanVal: ptsL?.value, defaultMean: 20.5, shortLabel: "puntos", argExtra: `Líder anotador (ESPN): ${propPlayerPts}, ~${ptsL.value.toFixed(1)} puntos por partido.` }),
+      makePropPick({ playerName: propPlayerReb, stat: "rebotes", line: lineReb, meanVal: rebL?.value, defaultMean: 5.5, shortLabel: "rebotes", argExtra: rebL ? `Líder en rebotes (ESPN): ${propPlayerReb}, ~${rebL.value.toFixed(1)} rebotes por partido.` : "Sin resumen ESPN." }),
+      makePropPick({ playerName: propPlayerAst, stat: "asistencias", line: lineAst, meanVal: astL?.value, defaultMean: 5.5, shortLabel: "asistencias", argExtra: astL ? `Líder en asistencias (ESPN): ${propPlayerAst}, ~${astL.value.toFixed(1)} asistencias por partido.` : "Sin resumen ESPN." }),
+      makePropPick({ playerName: propPlayerPts, stat: "puntos más rebotes más asistencias", line: linePra, meanVal: praEst, defaultMean: 30, shortLabel: "pts+reb+ast", argExtra: sameStar ? `Suma puntos, rebotes y asistencias del mismo jugador (ESPN): ~${praEst.toFixed(1)}.` : `Suma estimada ~${praEst.toFixed(1)} desde promedio anotador.` }),
+      makePropPick({ playerName: propPlayerPts, stat: "triples anotados", line: lineTri, meanVal: triEst, defaultMean: 2.5, shortLabel: "triples", argExtra: `Triples estimados ~${triEst.toFixed(1)} por partido (14% del volumen anotador).` })
+    );
+  }
 
   for (const { pick: propPick } of propsList) picks.push(propPick);
 

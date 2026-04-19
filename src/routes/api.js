@@ -32,8 +32,8 @@ router.get("/picks", async (req, res) => {
 
     res.json({
       date: new Date().toISOString(),
-      source: "ESPN (scoreboard + resumen) + TheSportsDB + modelo estadístico v3",
-      modelNote: "v3: probabilidades limpias (sin jitter aleatorio), win% desde records reales, tenis por ranking logístico, edge de valor = modelProb - 1/odds. Picks de valor: edge ≥ 4%.",
+      source: "ESPN + The Odds API (cuotas reales) + MLB Stats API (lanzadores/bateo) + TheSportsDB + modelo estadístico v4",
+      modelNote: "v4: cuotas reales de casas europeas via The Odds API → edge real vs. mercado. Béisbol: lanzador probable + stats de bateo desde MLB Stats API oficial. Edge ≥ 4% y confianza ≥ 72% para value picks.",
       total: picks.length,
       range: { targetDate, timezone: BOGOTA_TZ },
       feedHealth: { espnFeeds: feeds.espnFeeds.length, sportsDbFeeds: feeds.sportDbFeeds.length },
