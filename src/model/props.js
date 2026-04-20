@@ -6,16 +6,24 @@ import { getCalibrationStats } from "./calibration.js";
  * Representan la desviación estándar típica por partido de cada métrica.
  */
 const SIGMA_TABLE = {
+  // NBA individual player props
   "baloncesto|puntos": 6.5,
   "baloncesto|rebotes": 2.8,
   "baloncesto|asistencias": 2.3,
-  "baloncesto|triples": 1.2,
-  "baloncesto|robos": 0.85,
-  "baloncesto|tapones": 0.75,
   "baloncesto|triples anotados": 0.95,
-  "baloncesto|puntos 1er tiempo": 9.2,
+  "baloncesto|robos": 0.80,
+  "baloncesto|tapones": 0.72,
+  "baloncesto|turnovers": 1.05,
+  "baloncesto|puntos más rebotes": 7.2,
+  "baloncesto|puntos más asistencias": 7.0,
   "baloncesto|puntos más rebotes más asistencias": 8.5,
+  "baloncesto|field goals anotados": 2.4,
+  "baloncesto|tiros libres anotados": 2.0,
+  "baloncesto|minutos": 4.8,
+  // NBA team & game totals
+  "baloncesto|puntos 1er tiempo": 9.2,
   "baloncesto|asistencias del equipo": 4.1,
+  "baloncesto|triples": 1.2,
   "futbol|goles partido": 1.35,
   "futbol|goles (jugador)": 0.42,
   "futbol|asistencias (jugador)": 0.35,
