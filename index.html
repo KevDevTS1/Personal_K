@@ -436,6 +436,48 @@
     .stake-badge.low { background: var(--bg4); border-color: var(--border2); color: var(--text3); }
     .stake-badge .stake-icon { font-size: 12px; }
     .stake-badge .stake-no { color: var(--text3); font-weight: 500; }
+
+    /* ── TRACKER ─────────────────────────────────────────────────────────── */
+    .tracker-wrap { padding: 0 4px; }
+    .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
+    .tracker-title { font-size: 18px; font-weight: 700; color: var(--text); }
+    .tracker-actions { display: flex; gap: 8px; }
+    .trk-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 12px; cursor: pointer; }
+    .trk-btn:hover { border-color: var(--green); color: var(--green); }
+    .trk-btn.primary { background: rgba(63,185,80,.15); border-color: var(--green); color: var(--green); font-weight: 600; }
+    .stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+    .stat-card-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); margin-bottom: 6px; }
+    .stat-card-value { font-size: 22px; font-weight: 800; color: var(--text); }
+    .stat-card-value.green { color: var(--green); }
+    .stat-card-value.red { color: var(--red); }
+    .stat-card-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+    .trk-section-title { font-size: 13px; font-weight: 700; color: var(--text2); margin: 20px 0 10px; text-transform: uppercase; letter-spacing: .06em; }
+    .trk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .trk-table th { text-align: left; color: var(--text3); font-weight: 600; font-size: 10px; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid var(--border); }
+    .trk-table td { padding: 9px 10px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: middle; }
+    .trk-table tr:hover td { background: var(--bg3); }
+    .result-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .result-badge.win  { background: rgba(63,185,80,.15); color: var(--green); }
+    .result-badge.loss { background: rgba(248,81,73,.12); color: var(--red); }
+    .result-badge.push { background: rgba(139,148,158,.15); color: var(--text3); }
+    .result-badge.pending { background: rgba(227,179,65,.12); color: var(--yellow); }
+    .result-btns { display: flex; gap: 5px; flex-wrap: wrap; }
+    .result-btn { padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text3); font-size: 10px; font-weight: 600; cursor: pointer; }
+    .result-btn:hover { border-color: var(--green); color: var(--green); }
+    .result-btn.del:hover { border-color: var(--red); color: var(--red); }
+    .empty-tracker { text-align: center; padding: 60px 20px; color: var(--text3); }
+    .empty-tracker-icon { font-size: 48px; margin-bottom: 12px; }
+    /* Modal form */
+    .modal-field { margin-bottom: 14px; }
+    .modal-label { display: block; font-size: 11px; font-weight: 600; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
+    .modal-input { width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 13px; box-sizing: border-box; }
+    .modal-input:focus { outline: none; border-color: var(--green); }
+    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .modal-submit { width: 100%; padding: 12px; background: var(--green); border: none; border-radius: 10px; color: #0d1117; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
+    .modal-submit:hover { opacity: .9; }
+    .register-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 5px 11px; background: rgba(63,185,80,.10); border: 1px solid rgba(63,185,80,.28); border-radius: 8px; color: var(--green); font-size: 11px; font-weight: 600; cursor: pointer; }
+    .register-btn:hover { background: rgba(63,185,80,.2); }
     .best-pick-right {
       display: flex; flex-direction: column;
       align-items: flex-end; gap: 5px;
@@ -677,6 +719,7 @@
       </button>
       <button class="nav-tab active" data-tab="value">★ Valor</button>
       <button class="nav-tab" data-tab="all">Todos los partidos</button>
+      <button class="nav-tab" data-tab="tracker">📊 Mi Registro</button>
     </nav>
 
     <div class="navbar-right">
@@ -743,15 +786,28 @@
       <button class="stab" data-tab="all">
         Todos <span class="count" id="allCount">0</span>
       </button>
+      <button class="stab" data-tab="tracker">📊 Registro</button>
     </div>
 
     <div id="matchList"></div>
+    <div id="trackerSection" style="display:none"></div>
   </main>
 </div>
 
 <footer class="footer">
   <strong style="color:var(--green)">Info Bet</strong> — Análisis estadístico con fines informativos. Juega con responsabilidad.
 </footer>
+
+<!-- ── MODAL REGISTRO DE APUESTA ─────────────────────────────────────────── -->
+<div id="betModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;">
+  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:24px;width:min(94vw,460px);max-height:90vh;overflow-y:auto;">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+      <h3 style="margin:0;color:var(--text);font-size:16px;">Registrar apuesta</h3>
+      <button onclick="closeBetModal()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+    </div>
+    <div id="betModalBody"></div>
+  </div>
+</div>
 
 <script>
 // ─── CONSTANTS ──────────────────────────────────────────────────────────────
@@ -1047,6 +1103,7 @@ function renderPickPreviewRow(pick, label) {
         <div class="best-pick-market">${esc(market)}</div>
         <div class="best-pick-arg">${esc(arg)}</div>
         ${renderStakeBadge(pick)}
+        <button class="register-btn" onclick='openBetModal(${JSON.stringify({id:pick.id,sport:pick.sport,league:pick.league,event:pick.event,market:pick.market,marketLabel:pick.marketLabel,selection:pick.selection,odds:pick.odds,stake:pick.stake?.stake||20000,modelProb:pick.modelProb,modelEdge:pick.edge,modelConfidence:pick.confidence,argument:pick.argument})})'>+ Registrar apuesta</button>
       </div>
       <div class="best-pick-right">
         <div class="pill-block">
@@ -1424,25 +1481,26 @@ function buildMarketSelect() {
 // ─── BOOTSTRAP ───────────────────────────────────────────────────────────────
 function bindEvents() {
   // Nav tabs
+  function switchTab(tab) {
+    state.tab = tab;
+    document.querySelectorAll("#navTabs [data-tab], #sectionTabs [data-tab]")
+      .forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
+    const isTracker = tab === "tracker";
+    document.getElementById("matchList").style.display     = isTracker ? "none" : "";
+    document.getElementById("trackerSection").style.display = isTracker ? "" : "none";
+    if (isTracker) { loadTracker(); return; }
+    rebuildLeagueSelect();
+    renderMatches();
+  }
+
   document.getElementById("navTabs").addEventListener("click", e => {
     const btn = e.target.closest("[data-tab]");
-    if (!btn) return;
-    state.tab = btn.dataset.tab;
-    document.querySelectorAll("#navTabs [data-tab]").forEach(b => b.classList.toggle("active", b === btn));
-    document.querySelectorAll("#sectionTabs [data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === state.tab));
-    rebuildLeagueSelect();
-    renderMatches();
+    if (btn) switchTab(btn.dataset.tab);
   });
 
-  // Section tabs
   document.getElementById("sectionTabs").addEventListener("click", e => {
     const btn = e.target.closest("[data-tab]");
-    if (!btn) return;
-    state.tab = btn.dataset.tab;
-    document.querySelectorAll("#sectionTabs [data-tab]").forEach(b => b.classList.toggle("active", b === btn));
-    document.querySelectorAll("#navTabs [data-tab]").forEach(b => b.classList.toggle("active", b.dataset.tab === state.tab));
-    rebuildLeagueSelect();
-    renderMatches();
+    if (btn) switchTab(btn.dataset.tab);
   });
 
   document.getElementById("leagueSelect").addEventListener("change", e => {
@@ -1461,9 +1519,223 @@ function bindEvents() {
     renderMatches();
   });
 
+  document.getElementById("betModal").addEventListener("click", e => {
+    if (e.target === document.getElementById("betModal")) closeBetModal();
+  });
+
   document.getElementById("refreshBtn").addEventListener("click", updatePicks);
 
   document.getElementById("dateInput").addEventListener("change", updatePicks);
+}
+
+// ─── TRACKER ─────────────────────────────────────────────────────────────────
+let _trackerBets = [];
+
+function fmtCOP(n) {
+  if (n == null) return "—";
+  const abs = Math.abs(n).toLocaleString("es-CO");
+  return n >= 0 ? `+$${abs}` : `-$${Math.abs(n).toLocaleString("es-CO")}`;
+}
+function roiColor(roi) { return roi == null ? "" : roi >= 0 ? "green" : "red"; }
+
+async function loadTracker() {
+  try {
+    const [statsRes, betsRes] = await Promise.all([
+      fetch("/api/tracker/stats"),
+      fetch("/api/tracker/bets"),
+    ]);
+    const stats = await statsRes.json();
+    _trackerBets = await betsRes.json();
+    renderTracker(stats, _trackerBets);
+  } catch (e) {
+    document.getElementById("trackerSection").innerHTML =
+      `<div class="empty-tracker"><div class="empty-tracker-icon">⚠️</div>Error cargando registro: ${e.message}</div>`;
+  }
+}
+
+function renderTracker(stats, bets) {
+  const o = stats.overall || {};
+  const profitCls = (o.profit || 0) >= 0 ? "green" : "red";
+  const roiCls    = roiColor(o.roi);
+
+  const sportRows = Object.entries(stats.bySport || {}).map(([s, d]) => `
+    <tr>
+      <td>${s}</td><td>${d.resolved}/${d.bets}</td>
+      <td>${d.winRate != null ? d.winRate + "%" : "—"}</td>
+      <td class="${roiColor(d.roi)}">${d.roi != null ? d.roi + "%" : "—"}</td>
+      <td class="${(d.profit||0)>=0?"green":"red"}">${fmtCOP(d.profit)} COP</td>
+    </tr>`).join("") || `<tr><td colspan="5" style="color:var(--text3);text-align:center">Sin datos aún</td></tr>`;
+
+  const confRows = Object.entries(stats.byConf || {}).map(([tier, d]) => `
+    <tr>
+      <td>${tier}</td><td>${d.resolved}/${d.bets}</td>
+      <td>${d.winRate != null ? d.winRate + "%" : "—"}</td>
+      <td class="${roiColor(d.roi)}">${d.roi != null ? d.roi + "%" : "—"}</td>
+    </tr>`).join("");
+
+  const betRows = bets.slice(0, 50).map(b => {
+    const resultBadge = `<span class="result-badge ${b.result}">${
+      {win:"✅ Ganó", loss:"❌ Perdió", push:"↩️ Push", pending:"⏳ Pendiente"}[b.result] || b.result
+    }</span>`;
+    const profitTxt = b.profit != null ? `<span class="${b.profit>=0?"green":"red"}">${fmtCOP(b.profit)} COP</span>` : "—";
+    const actionBtns = b.result === "pending"
+      ? `<div class="result-btns">
+          <button class="result-btn" onclick="markResult('${b.id}','win')">✅ Ganó</button>
+          <button class="result-btn" onclick="markResult('${b.id}','loss')">❌ Perdió</button>
+          <button class="result-btn" onclick="markResult('${b.id}','push')">↩️ Push</button>
+        </div>`
+      : `<button class="result-btn del" onclick="deleteBetEntry('${b.id}')">🗑</button>`;
+    return `<tr>
+      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(b.event)}">${esc(b.event)}</td>
+      <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(b.selection)}">${esc(b.selection)}</td>
+      <td>${b.odds}</td>
+      <td>$${(b.stake||0).toLocaleString("es-CO")}</td>
+      <td>${resultBadge}</td>
+      <td>${profitTxt}</td>
+      <td>${actionBtns}</td>
+    </tr>`;
+  }).join("") || `<tr><td colspan="7"><div class="empty-tracker" style="padding:30px 0">
+    <div class="empty-tracker-icon">📋</div>
+    <div>Aún no hay apuestas registradas.</div>
+    <div style="font-size:12px;margin-top:6px">Pulsa <strong>+ Registrar apuesta</strong> en cualquier pick del modelo.</div>
+  </div></td></tr>`;
+
+  document.getElementById("trackerSection").innerHTML = `
+  <div class="tracker-wrap">
+    <div class="tracker-header">
+      <div class="tracker-title">📊 Mi Registro de Apuestas</div>
+      <div class="tracker-actions">
+        <button class="trk-btn" onclick="exportBets()">⬇ Exportar CSV</button>
+        <button class="trk-btn primary" onclick="loadTracker()">↻ Actualizar</button>
+      </div>
+    </div>
+
+    <!-- KPI cards -->
+    <div class="stat-cards">
+      <div class="stat-card">
+        <div class="stat-card-label">Apuestas</div>
+        <div class="stat-card-value">${o.bets || 0}</div>
+        <div class="stat-card-sub">${o.resolved || 0} resueltas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Aciertos</div>
+        <div class="stat-card-value ${o.wins > 0 ? "green" : ""}">${o.wins || 0}</div>
+        <div class="stat-card-sub">de ${o.resolved || 0} resueltas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Win Rate</div>
+        <div class="stat-card-value ${o.winRate >= 55 ? "green" : o.winRate < 45 ? "red" : ""}">${o.winRate != null ? o.winRate + "%" : "—"}</div>
+        <div class="stat-card-sub">últimos 30d: ${stats.last30d?.winRate != null ? stats.last30d.winRate + "%" : "—"}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">ROI</div>
+        <div class="stat-card-value ${roiCls}">${o.roi != null ? o.roi + "%" : "—"}</div>
+        <div class="stat-card-sub">últimos 7d: ${stats.last7d?.roi != null ? stats.last7d.roi + "%" : "—"}</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-label">Ganancia neta</div>
+        <div class="stat-card-value ${profitCls}" style="font-size:17px">${fmtCOP(o.profit)}</div>
+        <div class="stat-card-sub">COP · apostado: $${(o.staked||0).toLocaleString("es-CO")}</div>
+      </div>
+    </div>
+
+    <!-- Por deporte -->
+    <div class="trk-section-title">Por deporte</div>
+    <table class="trk-table">
+      <thead><tr><th>Deporte</th><th>Resueltas</th><th>Win%</th><th>ROI</th><th>Ganancia</th></tr></thead>
+      <tbody>${sportRows}</tbody>
+    </table>
+
+    <!-- Por nivel de confianza -->
+    <div class="trk-section-title">Por nivel de confianza del modelo</div>
+    <table class="trk-table">
+      <thead><tr><th>Confianza</th><th>Resueltas</th><th>Win%</th><th>ROI</th></tr></thead>
+      <tbody>${confRows || `<tr><td colspan="4" style="color:var(--text3);text-align:center">Sin datos</td></tr>`}</tbody>
+    </table>
+
+    <!-- Historial -->
+    <div class="trk-section-title">Historial reciente</div>
+    <div style="overflow-x:auto">
+      <table class="trk-table">
+        <thead><tr><th>Partido</th><th>Pick</th><th>Cuota</th><th>Apostado</th><th>Resultado</th><th>Ganancia</th><th></th></tr></thead>
+        <tbody>${betRows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+async function markResult(id, result) {
+  await fetch(`/api/tracker/bets/${id}`, {
+    method: "PATCH", headers: {"Content-Type":"application/json"},
+    body: JSON.stringify({ result })
+  });
+  await loadTracker();
+}
+
+async function deleteBetEntry(id) {
+  if (!confirm("¿Eliminar esta apuesta del registro?")) return;
+  await fetch(`/api/tracker/bets/${id}`, { method: "DELETE" });
+  await loadTracker();
+}
+
+function exportBets() {
+  const rows = [["id","fecha","deporte","liga","partido","pick","cuota","apostado","resultado","ganancia"]];
+  for (const b of _trackerBets) {
+    rows.push([b.id, b.recordedAt?.slice(0,10), b.sport, b.league, b.event,
+      b.selection, b.odds, b.stake, b.result, b.profit ?? ""]);
+  }
+  const csv = rows.map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
+  a.download = `infobet-registro-${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+function openBetModal(pick) {
+  const stake = pick.stake || 20000;
+  document.getElementById("betModalBody").innerHTML = `
+    <div class="modal-field">
+      <label class="modal-label">Partido</label>
+      <input class="modal-input" id="mEvent" value="${esc(pick.event||'')}" readonly style="opacity:.7">
+    </div>
+    <div class="modal-field">
+      <label class="modal-label">Pick seleccionado</label>
+      <input class="modal-input" id="mSelection" value="${esc(pick.selection||'')}" readonly style="opacity:.7">
+    </div>
+    <div class="modal-row">
+      <div class="modal-field">
+        <label class="modal-label">Cuota real en la casa</label>
+        <input class="modal-input" id="mOdds" type="number" step="0.01" min="1.01" value="${pick.odds}">
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Monto a apostar (COP)</label>
+        <input class="modal-input" id="mStake" type="number" step="5000" min="1000" value="${stake}">
+      </div>
+    </div>
+    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">
+      Kelly recomienda: <strong style="color:var(--green)">$${stake.toLocaleString("es-CO")} COP</strong>. Puedes ajustar según tu criterio.
+    </div>
+    <button class="modal-submit" onclick="submitBet(${JSON.stringify(pick).replace(/</g,'\\u003c')})">✅ Registrar apuesta</button>`;
+  const modal = document.getElementById("betModal");
+  modal.style.display = "flex";
+}
+
+function closeBetModal() {
+  document.getElementById("betModal").style.display = "none";
+}
+
+async function submitBet(pick) {
+  const odds  = parseFloat(document.getElementById("mOdds").value);
+  const stake = parseInt(document.getElementById("mStake").value, 10);
+  if (!odds || !stake) return alert("Ingresa cuota y monto válidos.");
+  try {
+    await fetch("/api/tracker/bets", {
+      method: "POST", headers: {"Content-Type":"application/json"},
+      body: JSON.stringify({ ...pick, odds, stake })
+    });
+    closeBetModal();
+    alert(`✅ Apuesta registrada: $${stake.toLocaleString("es-CO")} COP @ ${odds}`);
+  } catch (e) { alert("Error al registrar: " + e.message); }
 }
 
 async function bootstrap() {

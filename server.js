@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
 import apiRouter from "./src/routes/api.js";
+import trackerRouter from "./src/routes/tracker.js";
 import { warmup, startAutoRefresh } from "./src/cache/feeds.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,6 +14,7 @@ const PORT = process.env.PORT || 8787;
 app.use(express.json());
 app.use(express.static(__dirname));
 app.use("/api", apiRouter);
+app.use("/api/tracker", trackerRouter);
 
 // Serve favicon silently to avoid 404 noise
 app.get("/favicon.ico", (_req, res) => res.status(204).end());
