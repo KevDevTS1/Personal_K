@@ -902,6 +902,14 @@ const state = {
   loading: false
 };
 
+// ─── PICK REGISTRY (avoids JSON in onclick attrs) ────────────────────────────
+const _pickRegistry = new Map();
+function registerPick(pick) {
+  const key = pick.id || (pick.event + "|" + pick.selection + "|" + pick.market);
+  _pickRegistry.set(key, pick);
+  return key;
+}
+
 // ─── UTILS ───────────────────────────────────────────────────────────────────
 function esc(s) {
   if (s == null) return "";
@@ -1103,7 +1111,7 @@ function renderPickPreviewRow(pick, label) {
         <div class="best-pick-market">${esc(market)}</div>
         <div class="best-pick-arg">${esc(arg)}</div>
         ${renderStakeBadge(pick)}
-        <button class="register-btn" onclick='openBetModal(${JSON.stringify({id:pick.id,sport:pick.sport,league:pick.league,event:pick.event,market:pick.market,marketLabel:pick.marketLabel,selection:pick.selection,odds:pick.odds,stake:pick.stake?.stake||20000,modelProb:pick.modelProb,modelEdge:pick.edge,modelConfidence:pick.confidence,argument:pick.argument})})'>+ Registrar apuesta</button>
+        <button class="register-btn" onclick="openBetModalById('${esc(registerPick(pick))}')">+ Registrar apuesta</button>
       </div>
       <div class="best-pick-right">
         <div class="pill-block">
@@ -1691,8 +1699,15 @@ function exportBets() {
   a.click();
 }
 
+function openBetModalById(key) {
+  const pick = _pickRegistry.get(key);
+  if (!pick) return alert("No se encontró el pick. Recarga la página.");
+  openBetModal(pick);
+}
+
 function openBetModal(pick) {
-  const stake = pick.stake || 20000;
+  window._modalPick = pick;
+  const stake = (pick.stake?.stake) || pick.stake || 20000;
   document.getElementById("betModalBody").innerHTML = `
     <div class="modal-field">
       <label class="modal-label">Partido</label>
@@ -1713,26 +1728,34 @@ function openBetModal(pick) {
       </div>
     </div>
     <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">
-      Kelly recomienda: <strong style="color:var(--green)">$${stake.toLocaleString("es-CO")} COP</strong>. Puedes ajustar según tu criterio.
+      Kelly recomienda: <strong style="color:var(--green)">$${Number(stake).toLocaleString("es-CO")} COP</strong>. Puedes ajustar según tu criterio.
     </div>
-    <button class="modal-submit" onclick="submitBet(${JSON.stringify(pick).replace(/</g,'\\u003c')})">✅ Registrar apuesta</button>`;
-  const modal = document.getElementById("betModal");
-  modal.style.display = "flex";
+    <button class="modal-submit" onclick="submitBet()">✅ Registrar apuesta</button>`;
+  document.getElementById("betModal").style.display = "flex";
 }
 
 function closeBetModal() {
   document.getElementById("betModal").style.display = "none";
 }
 
-async function submitBet(pick) {
+async function submitBet() {
+  const pick  = window._modalPick;
   const odds  = parseFloat(document.getElementById("mOdds").value);
   const stake = parseInt(document.getElementById("mStake").value, 10);
-  if (!odds || !stake) return alert("Ingresa cuota y monto válidos.");
+  if (!pick) return alert("Error: pick no encontrado.");
+  if (!odds || odds <= 1 || !stake || stake < 1000) return alert("Ingresa cuota (>1) y monto válidos.");
   try {
-    await fetch("/api/tracker/bets", {
+    const res = await fetch("/api/tracker/bets", {
       method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({ ...pick, odds, stake })
+      body: JSON.stringify({
+        sport: pick.sport, league: pick.league, event: pick.event,
+        market: pick.market, marketLabel: pick.marketLabel || pick.market,
+        selection: pick.selection, odds, stake,
+        modelProb: pick.modelProb, modelEdge: pick.edge,
+        modelConfidence: pick.confidence, argument: pick.argument
+      })
     });
+    if (!res.ok) { const err = await res.json(); throw new Error(err.error || res.statusText); }
     closeBetModal();
     alert(`✅ Apuesta registrada: $${stake.toLocaleString("es-CO")} COP @ ${odds}`);
   } catch (e) { alert("Error al registrar: " + e.message); }
