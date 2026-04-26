@@ -7,6 +7,7 @@ import {
 } from "../data/espn.js";
 import { estimatePropProbabilities } from "../model/props.js";
 import { oddsFromProbability, confidenceFromProbability, confidenceFromCombo, computeEdge, bookHalfLine, winProbFromRecords } from "../model/scoring.js";
+import { isMarketEnabled } from "../config/markets.js";
 import { buildMoneylinePick, buildTotalsPick, buildPropPick } from "../picks/builders.js";
 
 function pp(prob, odds) {
@@ -152,17 +153,39 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   const picks = [];
 
   // Moneyline always
-  picks.push(buildMoneylinePick({
-    sport: "beisbol", league: leagueName, eventName,
-    favorite, underdog: favorite === homeName ? awayName : homeName,
-    ...pp(pFav, oddsMl),
-    confidence: confidenceFromProbability(pFav, 38, 86),
-    argument: `Win% local=${(hWR*100).toFixed(0)}%, visitante=${(aWR*100).toFixed(0)}% (records temporada ESPN).`,
-    eventDateUtc
-  }));
+  if (isMarketEnabled("beisbol", "moneyline")) {
+    picks.push(buildMoneylinePick({
+      sport: "beisbol", league: leagueName, eventName,
+      favorite, underdog: favorite === homeName ? awayName : homeName,
+      ...pp(pFav, oddsMl),
+      confidence: confidenceFromProbability(pFav, 38, 86),
+      argument: `Win% local=${(hWR*100).toFixed(0)}%, visitante=${(aWR*100).toFixed(0)}% (records temporada ESPN).`,
+      eventDateUtc
+    }));
+  }
+
+  // Run line (handicap MLB -1.5 / +1.5) — pedido por el usuario
+  if (isMarketEnabled("beisbol", "run_line") && hasRecords) {
+    const formGap = Math.abs(hWR - aWR);
+    if (formGap >= 0.10) {
+      // Favorito a -1.5: aprox prob = pFav * 0.62 (MLB run lines son apretadas)
+      const pRunLine = clamp(pFav * 0.62 + 0.05, 0.22, 0.65);
+      const oddsRl = oddsFromProbability(pRunLine);
+      const sideText = `${favorite} -1.5 carreras`;
+      picks.push({
+        sport: "beisbol", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+        market: "run_line", marketLabel: "Run line",
+        lineLabel: "-1.5", sideLabel: favorite,
+        selection: sideText,
+        ...pp(pRunLine, oddsRl),
+        confidence: confidenceFromProbability(pRunLine, 38, 80),
+        argument: `Brecha de win% ${(formGap*100).toFixed(0)}% (${homeName} ${(hWR*100).toFixed(0)}% vs ${awayName} ${(aWR*100).toFixed(0)}%). MLB run lines apretadas, pero el favorito tiene margen para ganar por 2+.`
+      });
+    }
+  }
 
   // Total carreras: solo si tenemos datos reales de runs/partido (MLB Stats API o ESPN)
-  if (hasRates && Number.isFinite(runsPgTeam) && hasSignal(overTotal ? totProb : 1 - totProb, 0.06)) {
+  if (isMarketEnabled("beisbol", "totals") && hasRates && Number.isFinite(runsPgTeam) && hasSignal(overTotal ? totProb : 1 - totProb, 0.06)) {
     picks.push(buildTotalsPick({
       sport: "beisbol", league: leagueName, eventName,
       line: "8.5 carreras", over: overTotal,
@@ -173,8 +196,10 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
     }));
   }
 
+  const allowProps = isMarketEnabled("beisbol", "player_props");
+
   // Hits equipo: only if hasRates
-  if (hasRates) {
+  if (allowProps && hasRates) {
     picks.push(buildPropPick({
       sport: "beisbol", league: leagueName, eventName,
       player: favorite, propType: "team", teamLabel: favorite,
@@ -187,7 +212,7 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   }
 
   // Ponches lanzador: only if hasPitcher
-  if (hasPitcher) {
+  if (allowProps && hasPitcher) {
     picks.push(buildPropPick({
       sport: "beisbol", league: leagueName, eventName,
       player: pitcherPlayer, stat: "ponches del lanzador", line: lineK, over: pickKOver,
@@ -201,7 +226,7 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   }
 
   // Carreras equipo: only if hasRates and real runs data
-  if (hasRates && runsTeamProb != null && oddsRunsTeam && Number.isFinite(runsPgTeam)) {
+  if (allowProps && hasRates && runsTeamProb != null && oddsRunsTeam && Number.isFinite(runsPgTeam)) {
     picks.push(buildPropPick({
       sport: "beisbol", league: leagueName, eventName,
       player: favorite, propType: "team", teamLabel: favorite,
@@ -214,7 +239,7 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   }
 
   // Batter props: only if real batter data from ESPN
-  if (Number.isFinite(rbiPg) && rbiPg > 0) {
+  if (allowProps && Number.isFinite(rbiPg) && rbiPg > 0) {
     picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "dobles del bateador", line: lineDbl, over: pickDblOver, ...pp(dblProb, oddsDbl), confidence: confidenceFromProbability(dblProb, 38, 84), argument: `Dobles por partido estimados: ~${dblPg.toFixed(2)} (ESPN).`, eventDateUtc }));
     picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "carreras impulsadas", line: lineRbi, over: pickRbiOver, ...pp(rbiProb, oddsRbi), confidence: confidenceFromProbability(rbiProb, 38, 84), argument: `Carreras impulsadas por partido del líder ESPN: ~${rbiPg.toFixed(2)}.`, eventDateUtc }));
     picks.push(buildPropPick({ sport: "beisbol", league: leagueName, eventName, player: hitterPlayer, stat: "hits más carreras más impulsadas", line: lineHrr, over: pickHrrOver, ...pp(hrrProb, oddsHrr), confidence: confidenceFromProbability(hrrProb, 38, 84), argument: `Hits + Carreras + Impulsadas combinados: media ~${hrrEst.toFixed(2)} vs línea ${lineHrr}.`, eventDateUtc }));
@@ -223,6 +248,7 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
   }
 
   // ── Combinada SGP x2 ─────────────────────────────────────────────────────
+  if (!isMarketEnabled("beisbol", "combo_same_game")) return picks;
   const mlbLegs = [
     { prob: hitsProb, odds: oddsHits, short: `${favorite} ${pickHitsOver ? "más de" : "menos de"} ${lineHits} hits` },
     { prob: kProb, odds: oddsK, short: `${pitcherPlayer} ${pickKOver ? "más de" : "menos de"} ${lineK} ponches` },
@@ -243,6 +269,19 @@ export function analyzeBaseballEvent(event, leagueName, leagueSlug, dateKey, sum
       modelProb: Math.min(a.prob, b.prob), edge: computeEdge(Math.min(a.prob, b.prob), oddsCombo),
       argument: "Hits del equipo y K del abridor desde ESPN + calibración rolling; piernas correlacionadas."
     });
+  }
+
+  // Adjuntar a cada pick el matchup completo (lanzadores + bateos de AMBOS
+  // equipos) para que applyBaseballMatchupAdjustments lo use después.
+  if (mlbGameData?.homePitcher || mlbGameData?.awayPitcher) {
+    const mm = {
+      homePitcher: mlbGameData.homePitcher || null,
+      awayPitcher: mlbGameData.awayPitcher || null,
+      homeBatting: mlbGameData.homeBatting || null,
+      awayBatting: mlbGameData.awayBatting || null,
+      favorite, // útil para identificar lado en el ajuste
+    };
+    for (const p of picks) p.mlbMatchup = mm;
   }
 
   return picks;

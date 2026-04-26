@@ -1,7 +1,16 @@
 import { Router } from "express";
 import { getAllBets, addBet, updateBetResult, deleteBet, computeStats } from "../data/tracker.js";
+import { autoEvaluatePendingBets } from "../data/autoEvaluator.js";
 
 const router = Router();
+
+// POST /api/tracker/auto-evaluate — corre el auto-evaluador on-demand
+router.post("/auto-evaluate", async (_req, res) => {
+  try {
+    const result = await autoEvaluatePendingBets({ verbose: true });
+    res.json(result);
+  } catch (e) { res.status(500).json({ error: e.message }); }
+});
 
 // GET /api/tracker/bets — lista completa
 router.get("/bets", (_req, res) => {
@@ -18,16 +27,31 @@ router.get("/stats", (_req, res) => {
 // POST /api/tracker/bets — registrar nueva apuesta
 router.post("/bets", (req, res) => {
   try {
-    const { sport, league, event, market, marketLabel, selection, odds, stake,
-            modelProb, modelEdge, modelConfidence, argument } = req.body;
+    const {
+      sport, league, leagueSlug, event,
+      homeTeam, awayTeam, eventDateUtc, sourceDateKey,
+      market, marketLabel, sideLabel, lineLabel, selection,
+      odds, stake,
+      modelProb, modelEdge, score, scoreLabel, argument
+    } = req.body;
     if (!event || !selection || !odds || !stake) {
       return res.status(400).json({ error: "Faltan campos: event, selection, odds, stake" });
     }
-    const bet = addBet({ sport, league, event, market, marketLabel, selection,
+    const bet = addBet({
+      sport, league, leagueSlug, event,
+      homeTeam: homeTeam || null,
+      awayTeam: awayTeam || null,
+      eventDateUtc: eventDateUtc || null,
+      sourceDateKey: sourceDateKey || null,
+      market, marketLabel,
+      sideLabel: sideLabel || null,
+      lineLabel: lineLabel || null,
+      selection,
       odds: Number(odds), stake: Number(stake),
       modelProb: Number(modelProb) || null,
       modelEdge: Number(modelEdge) || null,
-      modelConfidence: Number(modelConfidence) || null,
+      score: Number(score) || null,
+      scoreLabel: scoreLabel || null,
       argument: argument || null,
     });
     res.status(201).json(bet);

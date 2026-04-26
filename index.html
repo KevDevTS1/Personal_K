@@ -3,1795 +3,2049 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="theme-color" content="#0d1117">
-  <title>Info Bet | Análisis deportivo</title>
+  <meta name="theme-color" content="#0b0f17">
+  <title>InfoBet · Análisis deportivo</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
   <style>
+    /* ─────────────────────────────────────────────────────────────────────
+       DESIGN TOKENS
+       ───────────────────────────────────────────────────────────────────── */
     :root {
-      --bg:        #0d1117;
-      --bg2:       #161b22;
-      --bg3:       #1c2128;
-      --bg4:       #21262d;
-      --border:    #30363d;
-      --border2:   #3d444d;
-      --text:      #e6edf3;
-      --text2:     #9198a1;
-      --text3:     #636e7b;
-      --green:     #3fb950;
-      --green-dim: #238636;
-      --green-glow:rgba(63,185,80,.18);
-      --neon:      #39ff14;
-      --neon-soft: rgba(57,255,20,.1);
-      --blue:      #388bfd;
-      --red:       #f85149;
-      --orange:    #d29922;
-      --yellow:    #e3b341;
-      --purple:    #a371f7;
-      --r:         10px;
+      --bg:        #0b0f17;
+      --bg2:       #11161f;
+      --bg3:       #161c27;
+      --bg4:       #1c2330;
+      --bg5:       #232b3a;
+      --border:    #232a36;
+      --border2:   #2c3543;
+      --text:      #eef2f7;
+      --text2:     #a3acba;
+      --text3:     #6f7889;
+
+      --green:     #22c55e;
+      --green-dim: #16a34a;
+      --green-glow:rgba(34,197,94,.18);
+      --teal:      #14b8a6;
+      --blue:      #3b82f6;
+      --indigo:    #6366f1;
+      --violet:    #8b5cf6;
+      --pink:      #ec4899;
+      --orange:    #f59e0b;
+      --red:       #ef4444;
+      --yellow:    #eab308;
+
+      --r:         12px;
       --r2:        8px;
-      --shadow:    0 1px 3px rgba(0,0,0,.5),0 4px 16px rgba(0,0,0,.3);
+      --r3:        20px;
+      --shadow-s:  0 1px 2px rgba(0,0,0,.4);
+      --shadow:    0 4px 12px rgba(0,0,0,.4), 0 1px 2px rgba(0,0,0,.3);
+      --shadow-l:  0 18px 48px rgba(0,0,0,.55), 0 2px 8px rgba(0,0,0,.3);
+
+      --gradient-elite:        linear-gradient(135deg, #f59e0b, #eab308);
+      --gradient-fuerte:       linear-gradient(135deg, #22c55e, #14b8a6);
+      --gradient-razonable:    linear-gradient(135deg, #3b82f6, #6366f1);
+      --gradient-especulativo: linear-gradient(135deg, #6f7889, #4b5563);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     html { scroll-behavior: smooth; }
-
     body {
       font-family: 'Inter', system-ui, sans-serif;
-      background: var(--bg);
+      background:
+        radial-gradient(60% 60% at 80% -10%, rgba(99,102,241,.10), transparent 60%),
+        radial-gradient(50% 50% at -10% 110%, rgba(34,197,94,.08), transparent 60%),
+        var(--bg);
       color: var(--text);
       min-height: 100vh;
       font-size: 14px;
-      line-height: 1.5;
+      line-height: 1.55;
+      -webkit-font-smoothing: antialiased;
     }
 
-    /* ── NAVBAR ────────────────────────────────────────── */
+    button { font: inherit; cursor: pointer; border: none; background: none; color: inherit; }
+    input, select, textarea { font: inherit; color: inherit; }
+    a { color: inherit; text-decoration: none; }
+
+    /* ─────────────────────────────────────────────────────────────────────
+       NAVBAR
+       ───────────────────────────────────────────────────────────────────── */
     .navbar {
-      position: sticky;
-      top: 0;
-      z-index: 100;
-      background: rgba(13,17,23,.92);
-      backdrop-filter: blur(12px);
+      position: sticky; top: 0; z-index: 50;
+      background: rgba(11,15,23,.85);
+      backdrop-filter: blur(14px);
       border-bottom: 1px solid var(--border);
-      height: 56px;
+      height: 64px;
     }
     .navbar-inner {
-      max-width: 1320px;
+      max-width: 1440px;
       margin: 0 auto;
-      padding: 0 20px;
+      padding: 0 24px;
       height: 100%;
       display: flex;
       align-items: center;
-      gap: 16px;
+      gap: 24px;
     }
     .brand {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-decoration: none;
+      display: flex; align-items: center; gap: 12px;
       flex-shrink: 0;
     }
     .brand-mark {
-      width: 36px; height: 36px;
-      border-radius: 8px;
-      background: linear-gradient(135deg, var(--green-dim), var(--neon));
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--green), var(--teal));
       display: grid; place-items: center;
-      font-weight: 800; font-size: 12px; letter-spacing: .05em;
-      color: #0d1117;
-      box-shadow: 0 0 16px var(--green-glow);
+      color: #06281a;
+      font-weight: 800; font-size: 13px; letter-spacing: .04em;
+      box-shadow: 0 4px 18px var(--green-glow);
     }
     .brand-name {
-      font-weight: 800; font-size: 18px;
-      color: var(--text);
+      font-weight: 800; font-size: 20px;
+      letter-spacing: -.02em;
     }
     .brand-name span { color: var(--green); }
 
-    .navbar-mid { flex: 1; display: flex; justify-content: center; gap: 6px; }
-
-    .nav-tab {
-      padding: 6px 14px;
-      border-radius: 6px;
-      font-size: 13px; font-weight: 600;
-      border: 1px solid transparent;
-      background: transparent;
-      color: var(--text2);
-      cursor: pointer;
-      transition: all .15s;
-      display: flex; align-items: center; gap: 7px;
-    }
-    .nav-tab:hover { background: var(--bg3); color: var(--text); border-color: var(--border); }
-    .nav-tab.active { background: var(--bg3); color: var(--text); border-color: var(--border2); }
-    .nav-tab .live-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--red);
-      box-shadow: 0 0 8px var(--red);
-      animation: pulse 1.8s ease-in-out infinite;
-    }
-    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
-
-    .navbar-right { display: flex; align-items: center; gap: 10px; margin-left: auto; }
-
-    .date-input {
+    .nav-tabs {
+      display: flex; gap: 4px;
       background: var(--bg3);
       border: 1px solid var(--border);
-      border-radius: var(--r2);
-      color: var(--text);
-      padding: 6px 10px;
-      font-size: 13px;
-      font-family: inherit;
-      cursor: pointer;
-    }
-    .date-input:focus { outline: none; border-color: var(--green); }
-
-    .refresh-btn {
-      display: flex; align-items: center; gap: 7px;
-      background: var(--green-dim);
-      color: #fff;
-      border: none; border-radius: var(--r2);
-      padding: 7px 14px;
-      font-size: 13px; font-weight: 600;
-      cursor: pointer;
-      transition: background .15s, transform .15s;
-    }
-    .refresh-btn:hover { background: var(--green); color: #0d1117; transform: translateY(-1px); }
-    .refresh-btn:disabled { opacity: .5; cursor: not-allowed; transform: none; }
-    .refresh-btn .spin { display: inline-block; }
-    .refresh-btn.loading .spin { animation: spin .7s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* ── LAYOUT ────────────────────────────────────────── */
-    .layout {
-      max-width: 1320px;
-      margin: 0 auto;
-      padding: 20px 20px 60px;
-      display: grid;
-      grid-template-columns: 240px 1fr;
-      gap: 20px;
-      align-items: start;
-    }
-
-    /* ── SIDEBAR ───────────────────────────────────────── */
-    .sidebar {
-      position: sticky;
-      top: 76px;
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-    .sidebar-block {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
-      padding: 14px 16px;
-    }
-    .sidebar-title {
-      font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .1em;
-      color: var(--text3);
-      margin-bottom: 10px;
-    }
-    .sport-grid {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-    .sport-btn {
-      display: flex; align-items: center; gap: 6px;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: var(--r2);
-      color: var(--text2);
-      font-size: 13px; font-weight: 500;
-      padding: 8px 10px;
-      cursor: pointer;
-      transition: all .15s;
-      width: 100%;
-    }
-    .sport-btn:hover { border-color: var(--border2); color: var(--text); }
-    .sport-btn.active {
-      background: var(--green-glow);
-      border-color: var(--green);
-      color: var(--green);
-    }
-    .sport-icon { font-size: 16px; }
-
-    .filter-select {
-      width: 100%;
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: var(--r2);
-      color: var(--text);
-      padding: 8px 10px;
-      font-size: 13px;
-      font-family: inherit;
-      cursor: pointer;
-    }
-    .filter-select:focus { outline: none; border-color: var(--green); }
-
-    .conf-row {
-      display: flex; align-items: center; justify-content: space-between;
-      margin-bottom: 8px;
-    }
-    .conf-val {
-      font-weight: 700; font-size: 13px;
-      color: var(--green);
-    }
-    input[type="range"] {
-      width: 100%; accent-color: var(--green); height: 4px;
-    }
-
-    .status-box {
-      background: var(--bg3);
-      border: 1px solid var(--border);
-      border-radius: var(--r2);
-      padding: 10px 12px;
-      font-size: 12px;
-      color: var(--text2);
-      line-height: 1.4;
-    }
-    .status-box.error { border-color: var(--red); color: #ffa8a8; }
-
-    /* Stats summary in sidebar */
-    .stat-row {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 5px 0;
-      border-bottom: 1px solid var(--border);
-      font-size: 12px;
-    }
-    .stat-row:last-child { border-bottom: none; }
-    .stat-row .stat-k { color: var(--text2); }
-    .stat-row .stat-v { font-weight: 600; color: var(--text); }
-    .stat-row .stat-v.green { color: var(--green); }
-
-    /* ── MAIN CONTENT ──────────────────────────────────── */
-    .main { min-width: 0; }
-
-    /* Section tabs */
-    .section-tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 16px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--r);
+      border-radius: 10px;
       padding: 4px;
     }
-    .stab {
-      flex: 1;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      padding: 8px 12px;
-      border-radius: 8px;
+    .nav-tab {
+      padding: 7px 14px;
+      border-radius: 7px;
       font-size: 13px; font-weight: 600;
       color: var(--text2);
-      background: transparent; border: none;
-      cursor: pointer;
       transition: all .15s;
     }
-    .stab:hover { color: var(--text); background: var(--bg3); }
-    .stab.active { background: var(--bg3); color: var(--text); box-shadow: var(--shadow); }
-    .stab .count {
-      background: var(--bg4); border: 1px solid var(--border);
-      border-radius: 20px; padding: 1px 8px;
-      font-size: 11px; color: var(--text2);
-    }
-    .stab.active .count { background: var(--green-dim); color: #fff; border-color: transparent; }
-
-    /* ── LEAGUE GROUP ──────────────────────────────────── */
-    .league-group { margin-bottom: 12px; }
-    .league-header {
-      display: flex; align-items: center; gap: 10px;
-      padding: 8px 14px;
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--r) var(--r) 0 0;
-      font-size: 12px; font-weight: 700;
-      color: var(--text2);
-      text-transform: uppercase; letter-spacing: .06em;
-      border-bottom: none;
-    }
-    .league-sport-icon { font-size: 15px; }
-    .league-badge {
-      margin-left: auto;
-      background: var(--bg4); border: 1px solid var(--border);
-      border-radius: 20px; padding: 2px 8px;
-      font-size: 11px;
-      color: var(--text3);
-    }
-
-    /* ── MATCH CARD ────────────────────────────────────── */
-    .match-card {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-top: none;
-    }
-    .league-group > .match-card:last-child {
-      border-radius: 0 0 var(--r) var(--r);
-    }
-    .match-card + .match-card { border-top: 1px solid var(--border); }
-
-    .match-main {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 12px;
-      padding: 14px 16px;
-      cursor: pointer;
-      transition: background .12s;
-    }
-    .match-main:hover { background: var(--bg3); }
-
-    .team-block {
-      display: flex;
-      flex-direction: column;
-    }
-    .team-block.right { text-align: right; align-items: flex-end; }
-
-    .team-name {
-      font-size: 15px; font-weight: 700;
+    .nav-tab:hover { color: var(--text); }
+    .nav-tab.active {
+      background: var(--bg5);
       color: var(--text);
-      line-height: 1.2;
-    }
-    .team-league {
-      font-size: 11px; color: var(--text3);
-      margin-top: 2px;
+      box-shadow: var(--shadow-s);
     }
 
-    .score-block {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      min-width: 90px;
-    }
-    .score-numbers {
-      font-size: 22px; font-weight: 800;
-      color: var(--text);
-      letter-spacing: -.02em;
-      line-height: 1;
-    }
-    .score-sep { color: var(--text3); margin: 0 4px; font-weight: 400; }
-    .score-time {
-      font-size: 13px; font-weight: 600;
-      color: var(--text2);
-    }
-    .live-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      background: rgba(248,81,73,.15);
-      border: 1px solid rgba(248,81,73,.4);
-      border-radius: 4px;
-      padding: 2px 8px;
-      font-size: 11px; font-weight: 700;
-      color: var(--red);
-      letter-spacing: .08em;
-    }
-    .live-badge::before {
-      content: "";
-      width: 6px; height: 6px; border-radius: 50%;
-      background: var(--red);
-      animation: pulse 1.4s ease-in-out infinite;
-    }
-    .scheduled-badge {
-      font-size: 12px; font-weight: 500;
-      color: var(--text3);
-    }
-
-    /* ── BEST PICK PREVIEW ─────────────────────────────── */
-    .best-pick-preview {
-      margin: 0 16px 12px;
-      background: rgba(63,185,80,.06);
-      border: 1px solid rgba(63,185,80,.2);
-      border-radius: var(--r2);
-      padding: 10px 14px;
-      display: flex;
-      flex-direction: column;
-      gap: 0;
-    }
-    .best-pick-row {
-      display: grid;
-      grid-template-columns: 1fr auto;
-      gap: 8px;
-      align-items: start;
-    }
-    .pick-divider {
-      height: 1px;
-      background: rgba(63,185,80,.15);
-      margin: 8px 0;
-    }
-    .best-pick-left { min-width: 0; }
-    .best-pick-label {
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .1em;
-      color: var(--green);
-      margin-bottom: 4px;
-    }
-    .best-pick-row:nth-child(3) .best-pick-label { color: var(--blue); }
-    .best-pick-row:nth-child(3) .best-pick-selection { font-size: 13px; }
-    .best-pick-selection {
-      font-size: 14px; font-weight: 700;
-      color: var(--text);
-      line-height: 1.3;
-    }
-    .best-pick-market {
-      font-size: 11px; color: var(--text3);
-      margin-top: 2px;
-    }
-    .best-pick-arg {
-      font-size: 12px; color: var(--text2);
-      margin-top: 6px;
-      line-height: 1.4;
-      display: -webkit-box;
-      -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical;
-      overflow: hidden;
-    }
-    .stake-badge {
-      display: inline-flex; align-items: center; gap: 5px;
-      margin-top: 7px; padding: 5px 9px;
-      background: rgba(63,185,80,.10); border: 1px solid rgba(63,185,80,.28);
-      border-radius: 8px; font-size: 11px; color: var(--green); font-weight: 600;
-    }
-    .stake-badge.mid { background: rgba(227,179,65,.10); border-color: rgba(227,179,65,.3); color: var(--yellow); }
-    .stake-badge.low { background: var(--bg4); border-color: var(--border2); color: var(--text3); }
-    .stake-badge .stake-icon { font-size: 12px; }
-    .stake-badge .stake-no { color: var(--text3); font-weight: 500; }
-
-    /* ── TRACKER ─────────────────────────────────────────────────────────── */
-    .tracker-wrap { padding: 0 4px; }
-    .tracker-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 10px; }
-    .tracker-title { font-size: 18px; font-weight: 700; color: var(--text); }
-    .tracker-actions { display: flex; gap: 8px; }
-    .trk-btn { padding: 7px 14px; border-radius: 8px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text2); font-size: 12px; cursor: pointer; }
-    .trk-btn:hover { border-color: var(--green); color: var(--green); }
-    .trk-btn.primary { background: rgba(63,185,80,.15); border-color: var(--green); color: var(--green); font-weight: 600; }
-    .stat-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px,1fr)); gap: 10px; margin-bottom: 20px; }
-    .stat-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-    .stat-card-label { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .07em; color: var(--text3); margin-bottom: 6px; }
-    .stat-card-value { font-size: 22px; font-weight: 800; color: var(--text); }
-    .stat-card-value.green { color: var(--green); }
-    .stat-card-value.red { color: var(--red); }
-    .stat-card-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
-    .trk-section-title { font-size: 13px; font-weight: 700; color: var(--text2); margin: 20px 0 10px; text-transform: uppercase; letter-spacing: .06em; }
-    .trk-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-    .trk-table th { text-align: left; color: var(--text3); font-weight: 600; font-size: 10px; text-transform: uppercase; padding: 6px 10px; border-bottom: 1px solid var(--border); }
-    .trk-table td { padding: 9px 10px; border-bottom: 1px solid var(--bg3); color: var(--text2); vertical-align: middle; }
-    .trk-table tr:hover td { background: var(--bg3); }
-    .result-badge { display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 20px; font-size: 11px; font-weight: 700; }
-    .result-badge.win  { background: rgba(63,185,80,.15); color: var(--green); }
-    .result-badge.loss { background: rgba(248,81,73,.12); color: var(--red); }
-    .result-badge.push { background: rgba(139,148,158,.15); color: var(--text3); }
-    .result-badge.pending { background: rgba(227,179,65,.12); color: var(--yellow); }
-    .result-btns { display: flex; gap: 5px; flex-wrap: wrap; }
-    .result-btn { padding: 3px 9px; border-radius: 20px; border: 1px solid var(--border2); background: var(--bg3); color: var(--text3); font-size: 10px; font-weight: 600; cursor: pointer; }
-    .result-btn:hover { border-color: var(--green); color: var(--green); }
-    .result-btn.del:hover { border-color: var(--red); color: var(--red); }
-    .empty-tracker { text-align: center; padding: 60px 20px; color: var(--text3); }
-    .empty-tracker-icon { font-size: 48px; margin-bottom: 12px; }
-    /* Modal form */
-    .modal-field { margin-bottom: 14px; }
-    .modal-label { display: block; font-size: 11px; font-weight: 600; color: var(--text3); margin-bottom: 5px; text-transform: uppercase; letter-spacing: .05em; }
-    .modal-input { width: 100%; padding: 9px 12px; background: var(--bg3); border: 1px solid var(--border2); border-radius: 8px; color: var(--text); font-size: 13px; box-sizing: border-box; }
-    .modal-input:focus { outline: none; border-color: var(--green); }
-    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-    .modal-submit { width: 100%; padding: 12px; background: var(--green); border: none; border-radius: 10px; color: #0d1117; font-size: 14px; font-weight: 700; cursor: pointer; margin-top: 8px; }
-    .modal-submit:hover { opacity: .9; }
-    .register-btn { display: inline-flex; align-items: center; gap: 5px; margin-top: 8px; padding: 5px 11px; background: rgba(63,185,80,.10); border: 1px solid rgba(63,185,80,.28); border-radius: 8px; color: var(--green); font-size: 11px; font-weight: 600; cursor: pointer; }
-    .register-btn:hover { background: rgba(63,185,80,.2); }
-    .best-pick-right {
-      display: flex; flex-direction: column;
-      align-items: flex-end; gap: 5px;
-      flex-shrink: 0;
-    }
-    .odds-pill {
-      background: var(--bg4); border: 1px solid var(--border2);
-      border-radius: 6px; padding: 3px 9px;
-      font-size: 13px; font-weight: 700;
-      color: var(--text);
-    }
-    .conf-pill {
-      font-size: 12px; font-weight: 700;
-      padding: 3px 9px; border-radius: 6px;
-    }
-    .conf-pill.high { background: rgba(63,185,80,.15); border: 1px solid rgba(63,185,80,.35); color: var(--green); }
-    .conf-pill.mid  { background: rgba(227,179,65,.12); border: 1px solid rgba(227,179,65,.3); color: var(--yellow); }
-    .conf-pill.low  { background: rgba(248,81,73,.1); border: 1px solid rgba(248,81,73,.3); color: #ffa8a8; }
-    .edge-pill {
-      font-size: 11px; font-weight: 700;
-      padding: 2px 8px; border-radius: 20px;
-    }
-    .edge-pill.pos { background: rgba(63,185,80,.12); color: var(--green); }
-    .edge-pill.neg { background: rgba(248,81,73,.1); color: var(--red); }
-    .edge-pill.neu { background: var(--bg4); color: var(--text3); }
-
-    /* ── PILL WRAPPERS con etiqueta + info ─────────────────── */
-    .pill-block {
-      display: flex; flex-direction: column; align-items: flex-end; gap: 2px;
-    }
-    .pill-row {
-      display: flex; align-items: center; gap: 4px;
-    }
-    .pill-label {
-      font-size: 9px; font-weight: 600; text-transform: uppercase;
-      letter-spacing: .06em; color: var(--text3);
-      text-align: right;
-    }
-    .info-btn {
-      width: 14px; height: 14px; border-radius: 50%;
-      background: var(--bg4); border: 1px solid var(--border2);
-      color: var(--text3);
-      font-size: 9px; font-weight: 700;
-      display: inline-flex; align-items: center; justify-content: center;
-      cursor: pointer; flex-shrink: 0;
+    .nav-search {
+      flex: 1;
+      max-width: 380px;
       position: relative;
-      font-family: inherit;
-      padding: 0;
-      line-height: 1;
     }
-    .info-btn:hover { border-color: var(--green); color: var(--green); }
-    .info-btn .tooltip {
-      display: none;
-      position: absolute; bottom: calc(100% + 7px); right: 0;
-      width: 220px;
-      background: var(--bg3); border: 1px solid var(--border2);
-      border-radius: var(--r2);
-      padding: 9px 11px;
-      font-size: 11px; font-weight: 400; line-height: 1.5;
-      color: var(--text2);
-      text-transform: none; letter-spacing: 0;
-      white-space: normal; text-align: left;
-      z-index: 200;
-      box-shadow: 0 4px 16px rgba(0,0,0,.5);
+    .nav-search input {
+      width: 100%;
+      height: 38px;
+      padding: 0 12px 0 38px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--text);
+      transition: border .15s;
+    }
+    .nav-search input:focus { outline: none; border-color: var(--green); }
+    .nav-search svg {
+      position: absolute; left: 12px; top: 50%;
+      transform: translateY(-50%);
+      color: var(--text3);
       pointer-events: none;
     }
-    .info-btn .tooltip::after {
-      content: "";
-      position: absolute; top: 100%; right: 4px;
-      border: 5px solid transparent;
-      border-top-color: var(--border2);
-    }
-    .info-btn:hover .tooltip { display: block; }
 
-    /* ── EXPAND BUTTON ─────────────────────────────────── */
-    .expand-btn {
-      width: 100%;
-      display: flex; align-items: center; justify-content: center; gap: 7px;
-      padding: 8px 16px;
-      background: transparent;
-      border: none; border-top: 1px solid var(--border);
-      color: var(--text3);
-      font-size: 12px; font-weight: 600;
-      cursor: pointer;
-      transition: all .15s;
-      font-family: inherit;
-    }
-    .expand-btn:hover { background: var(--bg3); color: var(--text2); }
-    .expand-btn .chevron { transition: transform .2s; font-size: 10px; }
-    .expand-btn.open .chevron { transform: rotate(180deg); }
-
-    /* ── EXPANDED PICKS ────────────────────────────────── */
-    .picks-panel {
-      display: none;
-      border-top: 1px solid var(--border);
-    }
-    .picks-panel.open { display: block; }
-
-    .picks-panel-header {
-      padding: 10px 16px;
-      font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .1em;
-      color: var(--text3);
+    .nav-meta { margin-left: auto; display: flex; gap: 12px; align-items: center; }
+    .nav-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px;
       background: var(--bg3);
-      border-bottom: 1px solid var(--border);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px; color: var(--text2);
+    }
+    .pulse {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
+      animation: pulse 1.6s infinite;
+    }
+    @keyframes pulse {
+      0%,100% { opacity: .6; transform: scale(1); }
+      50%     { opacity: 1; transform: scale(1.3); }
     }
 
-    .pick-row {
+    /* ─────────────────────────────────────────────────────────────────────
+       LAYOUT
+       ───────────────────────────────────────────────────────────────────── */
+    .shell {
+      max-width: 1440px;
+      margin: 0 auto;
+      padding: 24px;
       display: grid;
-      grid-template-columns: auto 1fr auto auto auto;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 16px;
-      border-bottom: 1px solid var(--border);
-      transition: background .1s;
+      grid-template-columns: 280px 1fr;
+      gap: 24px;
     }
-    .pick-row:last-child { border-bottom: none; }
-    .pick-row:hover { background: var(--bg3); }
-    .pick-row.best-row { background: rgba(63,185,80,.04); }
+    @media (max-width: 1024px) {
+      .shell { grid-template-columns: 1fr; }
+      .sidebar { position: static; }
+    }
 
-    .pick-row-market {
-      font-size: 10px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .07em;
-      color: var(--text3);
-      background: var(--bg4); border: 1px solid var(--border);
-      border-radius: 4px; padding: 2px 7px;
-      white-space: nowrap;
+    /* ─────────────────────────────────────────────────────────────────────
+       SIDEBAR
+       ───────────────────────────────────────────────────────────────────── */
+    .sidebar {
+      position: sticky;
+      top: 88px;
+      align-self: start;
+      max-height: calc(100vh - 104px);
+      overflow-y: auto;
+      display: flex; flex-direction: column;
+      gap: 18px;
     }
-    .pick-row-selection {
-      font-size: 13px; font-weight: 600;
+    .sidebar::-webkit-scrollbar { width: 6px; }
+    .sidebar::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+
+    .panel {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+      box-shadow: var(--shadow-s);
+    }
+    .panel-title {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--text3);
+      margin-bottom: 12px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .panel-title svg { width: 14px; height: 14px; color: var(--green); }
+
+    /* sport chips */
+    .sport-chips {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .sport-chip {
+      padding: 12px 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      transition: all .15s;
+      text-align: center;
+    }
+    .sport-chip:hover { border-color: var(--border2); transform: translateY(-1px); }
+    .sport-chip.active {
+      background: linear-gradient(135deg, rgba(34,197,94,.12), rgba(20,184,166,.08));
+      border-color: var(--green);
+      box-shadow: 0 0 0 2px var(--green-glow);
+    }
+    .sport-chip svg { width: 22px; height: 22px; color: var(--text2); }
+    .sport-chip.active svg { color: var(--green); }
+    .sport-chip-label { font-size: 12px; font-weight: 600; }
+
+    /* selects */
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field-label { font-size: 11px; color: var(--text3); font-weight: 600; text-transform: uppercase; letter-spacing: .06em; }
+    .select {
+      width: 100%;
+      height: 36px;
+      padding: 0 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       color: var(--text);
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%23a3acba' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      padding-right: 32px;
+    }
+    .select:focus { outline: none; border-color: var(--green); }
+
+    /* market chips */
+    .market-chips {
+      display: flex; flex-wrap: wrap; gap: 6px;
+    }
+    .market-chip {
+      padding: 6px 10px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px;
+      color: var(--text2);
+      transition: all .15s;
+    }
+    .market-chip:hover { color: var(--text); border-color: var(--border2); }
+    .market-chip.active {
+      background: var(--green);
+      border-color: var(--green);
+      color: #0b0f17;
+      font-weight: 600;
+    }
+
+    /* score slider */
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    .slider-row input[type="range"] {
+      flex: 1;
+      -webkit-appearance: none;
+      height: 4px;
+      background: var(--bg4);
+      border-radius: 2px;
+    }
+    .slider-row input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      background: var(--green);
+      cursor: pointer;
+      box-shadow: 0 0 0 4px var(--green-glow);
+    }
+    .slider-value {
+      min-width: 36px; text-align: right;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      color: var(--green);
+    }
+
+    .btn-reset {
+      width: 100%;
+      padding: 9px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text2);
+      font-size: 13px; font-weight: 600;
+      transition: all .15s;
+    }
+    .btn-reset:hover { color: var(--text); border-color: var(--border2); }
+
+    /* sources panel */
+    .sources-list { display: flex; flex-direction: column; gap: 8px; }
+    .source-row {
+      display: flex; align-items: flex-start; gap: 8px;
+      padding: 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+    }
+    .source-dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      margin-top: 6px;
+      flex-shrink: 0;
+    }
+    .source-dot.ok          { background: var(--green);  box-shadow: 0 0 6px var(--green); }
+    .source-dot.empty       { background: var(--yellow); }
+    .source-dot.missing_key { background: var(--orange); }
+    .source-dot.error       { background: var(--red);    box-shadow: 0 0 6px rgba(239,68,68,.4); }
+    .source-dot.off         { background: var(--text3); }
+    .source-dot.secondary   { background: #6366f1; }
+    .source-text { flex: 1; min-width: 0; }
+    .source-name { font-size: 12px; font-weight: 600; color: var(--text); }
+    .source-detail { font-size: 11px; color: var(--text3); margin-top: 1px; line-height: 1.4; }
+    .source-env {
+      display: inline-block;
+      margin-top: 4px;
+      padding: 2px 6px;
+      background: var(--bg4);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+      color: var(--orange);
+    }
+
+    /* ─────────────────────────────────────────────────────────────────────
+       MAIN
+       ───────────────────────────────────────────────────────────────────── */
+    .main { display: flex; flex-direction: column; gap: 20px; }
+
+    .hero {
+      display: flex; align-items: center; gap: 16px;
+      padding: 18px 22px;
+      background:
+        linear-gradient(135deg, rgba(34,197,94,.06), rgba(20,184,166,.04)),
+        var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+    }
+    .hero-icon {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--green), var(--teal));
+      display: grid; place-items: center;
+      color: #06281a;
+      flex-shrink: 0;
+    }
+    .hero-text { flex: 1; }
+    .hero-title { font-size: 18px; font-weight: 700; }
+    .hero-sub   { font-size: 13px; color: var(--text2); margin-top: 2px; }
+    .hero-stats { display: flex; gap: 16px; flex-wrap: wrap; }
+    .hero-stat { text-align: right; }
+    .hero-stat-num { font-size: 22px; font-weight: 800; line-height: 1; }
+    .hero-stat-lbl { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: .08em; margin-top: 4px; }
+
+    /* section header */
+    .section { display: flex; flex-direction: column; gap: 14px; }
+    .section-head {
+      display: flex; align-items: center; gap: 10px;
+    }
+    .section-title {
+      font-size: 16px; font-weight: 700;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-count {
+      font-size: 11px; font-weight: 700;
+      padding: 2px 8px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--text2);
+    }
+    .section-sort { margin-left: auto; }
+    .section-sort .select { width: 180px; height: 32px; font-size: 12px; }
+
+    /* picks grid */
+    .picks-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+      gap: 16px;
+    }
+
+    .pick {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 18px;
+      display: flex; flex-direction: column; gap: 14px;
+      transition: all .15s;
+      position: relative;
+      overflow: hidden;
+    }
+    .pick::before {
+      content: '';
+      position: absolute;
+      left: 0; top: 0; bottom: 0; width: 3px;
+      background: var(--gradient-razonable);
+    }
+    .pick.tone-elite::before        { background: var(--gradient-elite); }
+    .pick.tone-fuerte::before       { background: var(--gradient-fuerte); }
+    .pick.tone-razonable::before    { background: var(--gradient-razonable); }
+    .pick.tone-especulativo::before { background: var(--gradient-especulativo); }
+    .pick:hover { border-color: var(--border2); transform: translateY(-2px); box-shadow: var(--shadow); }
+
+    .pick-head {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .pick-league {
+      font-size: 11px; font-weight: 700;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      flex: 1;
+    }
+    .pick-time {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pick-live {
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(239,68,68,.15);
+      color: var(--red);
+      font-size: 10px; font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .pick-live::before {
+      content: ''; width: 6px; height: 6px;
+      border-radius: 50%; background: var(--red);
+      animation: pulse 1.4s infinite;
+    }
+
+    .pick-event {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .pick-team {
+      display: flex; align-items: center; gap: 8px;
+      min-width: 0;
+    }
+    .pick-team.away { justify-content: flex-end; }
+    .pick-team img {
+      width: 32px; height: 32px;
+      object-fit: contain;
+      border-radius: 6px;
+      background: var(--bg3);
+      padding: 2px;
+      flex-shrink: 0;
+    }
+    .pick-team .placeholder {
+      width: 32px; height: 32px;
+      border-radius: 6px;
+      background: var(--bg3);
+      display: grid; place-items: center;
+      font-weight: 700; font-size: 12px;
+      color: var(--text3);
+      flex-shrink: 0;
+    }
+    .pick-team-name {
+      font-size: 14px; font-weight: 600;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .pick-vs {
+      font-size: 11px; font-weight: 700;
+      color: var(--text3);
+      padding: 0 4px;
+    }
+    .pick-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 18px; font-weight: 700;
+      color: var(--text);
+      padding: 0 8px;
+    }
+
+    .pick-pick {
+      padding: 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      display: flex; flex-direction: column; gap: 6px;
+      position: relative;
+    }
+    .pick-pick.live {
+      border-color: rgba(239,68,68,.45);
+      background: linear-gradient(180deg, rgba(239,68,68,.08), var(--bg3) 70%);
+    }
+    .pick-pick.observation {
+      border-color: rgba(148,163,184,.35);
+      background: linear-gradient(180deg, rgba(148,163,184,.08), var(--bg3) 70%);
+    }
+    .pick-pick.observation .pick-pick-market { color: var(--text2); }
+    .pick-pick.observation .pick-pick-selection { color: var(--text3); font-weight: 600; }
+    .pick-pick-livebadge {
+      position: absolute;
+      top: -10px; left: 12px;
+      padding: 3px 10px;
+      border-radius: 999px;
+      background: var(--red);
+      color: #fff;
+      font-size: 9.5px; font-weight: 800;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+      display: inline-flex; align-items: center; gap: 5px;
+      box-shadow: 0 4px 14px rgba(239,68,68,.35);
+    }
+    .pick-pick-livebadge.muted {
+      background: var(--text3);
+      box-shadow: none;
+    }
+    .pick-pick-livebadge::before {
+      content: ''; width: 6px; height: 6px;
+      border-radius: 50%; background: #fff;
+      animation: pulse 1.4s infinite;
+    }
+    .pick-pick-livectx {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .pick-pick-market {
+      font-size: 11px; font-weight: 700;
+      color: var(--green);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+    }
+    .pick-pick.live .pick-pick-market { color: var(--red); }
+    .pick-pick-selection {
+      font-size: 15px; font-weight: 700;
       line-height: 1.3;
     }
-    .pick-row-sub {
-      font-size: 11px; color: var(--text3); margin-top: 1px;
+    .pick-pick-note {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'JetBrains Mono', monospace;
+      margin-top: 2px;
     }
-    .pick-row-odds {
-      font-size: 14px; font-weight: 800;
+
+    .pick-meta {
+      display: grid;
+      grid-template-columns: auto 1fr auto;
+      gap: 12px;
+      align-items: center;
+    }
+    .pick-score-medal {
+      width: 64px; height: 64px;
+      border-radius: 50%;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      color: #06281a;
+      position: relative;
+      flex-shrink: 0;
+      line-height: 1;
+      text-align: center;
+    }
+    .pick-score-medal .pick-score-num {
+      font-size: 22px; line-height: 1;
+      letter-spacing: -0.5px;
+    }
+    .pick-score-medal .pick-score-pct {
+      font-size: 9px; font-weight: 700;
+      opacity: .75; letter-spacing: 1.5px;
+      margin-top: 2px; text-transform: uppercase;
+    }
+    .pick-score-medal.tone-elite        { background: var(--gradient-elite); }
+    .pick-score-medal.tone-fuerte       { background: var(--gradient-fuerte); }
+    .pick-score-medal.tone-razonable    { background: var(--gradient-razonable); color: #fff; }
+    .pick-score-medal.tone-especulativo { background: var(--gradient-especulativo); color: #fff; }
+
+    .pick-score-info { display: flex; flex-direction: column; gap: 3px; min-width: 0; flex: 1; }
+    .pick-score-tier { font-size: 13px; font-weight: 700; }
+    .pick-score-data { font-size: 11px; color: var(--text3); }
+    .pick-score-data b { color: var(--text2); font-weight: 700; }
+
+    .pick-actions {
+      display: flex; gap: 8px;
+    }
+    .btn {
+      flex: 1;
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 600;
+      text-align: center;
+      transition: all .15s;
+      display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-primary {
+      background: var(--green);
+      color: #06281a;
+    }
+    .btn-primary:hover { background: var(--green-dim); }
+    .btn-secondary {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      color: var(--text2);
+    }
+    .btn-secondary:hover { color: var(--text); border-color: var(--border2); }
+
+    /* sources line */
+    .pick-sources {
+      display: flex; flex-wrap: wrap; gap: 4px;
+      padding-top: 8px;
+      border-top: 1px dashed var(--border);
+      font-size: 10px;
+      color: var(--text3);
+    }
+    .source-chip {
+      padding: 2px 7px;
+      background: var(--bg3);
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 10px;
+    }
+
+    /* empty state */
+    .empty {
+      grid-column: 1 / -1;
+      padding: 60px 24px;
+      text-align: center;
+      background: var(--bg2);
+      border: 1px dashed var(--border2);
+      border-radius: var(--r);
+      color: var(--text2);
+    }
+    .empty svg { width: 48px; height: 48px; color: var(--text3); margin-bottom: 12px; }
+    .empty h3 { font-size: 16px; margin-bottom: 6px; color: var(--text); }
+    .empty p { font-size: 13px; }
+
+    /* ─────────────────────────────────────────────────────────────────────
+       MODAL (analisis 500+ palabras / registro de apuesta)
+       ───────────────────────────────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.7);
+      backdrop-filter: blur(6px);
+      display: none;
+      align-items: center; justify-content: center;
+      z-index: 200;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      max-width: 760px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: var(--shadow-l);
+      overflow: hidden;
+    }
+    .modal-head {
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap: 12px;
+    }
+    .modal-title { flex: 1; font-size: 16px; font-weight: 700; }
+    .modal-close {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      background: var(--bg3);
+      display: grid; place-items: center;
+      color: var(--text2);
+      transition: all .15s;
+    }
+    .modal-close:hover { background: var(--bg4); color: var(--text); }
+    .modal-body {
+      padding: 22px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-body::-webkit-scrollbar { width: 8px; }
+    .modal-body::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 4px; }
+
+    .modal-pick-summary {
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: 14px; align-items: center;
+      padding: 14px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      margin-bottom: 18px;
+    }
+    .modal-mega-card {
+      border-radius: 14px; padding: 18px; margin-bottom: 18px;
+      background: linear-gradient(180deg, var(--bg3), var(--bg2));
+      border: 1px solid var(--border2);
+      position: relative; overflow: hidden;
+    }
+    .modal-mega-card::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(circle at 50% -30%, rgba(34,197,94,.16), transparent 60%);
+    }
+    .modal-mega-card.tone-amber::before { background: radial-gradient(circle at 50% -30%, rgba(234,179,8,.18), transparent 60%); }
+    .modal-mega-card.tone-rose::before  { background: radial-gradient(circle at 50% -30%, rgba(244,63,94,.18), transparent 60%); }
+    .modal-mega-league {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .12em;
+      color: var(--text3); font-weight: 700; margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .modal-mega-live {
+      background: var(--red); color: white; padding: 2px 8px;
+      border-radius: 4px; font-size: 10px; font-weight: 800;
+      animation: pulse-live 1.6s infinite;
+    }
+    @keyframes pulse-live {
+      0%, 100% { opacity: 1; }
+      50% { opacity: .55; }
+    }
+    .modal-mega-teams {
+      display: grid; grid-template-columns: 1fr auto 1fr;
+      gap: 18px; align-items: center;
+      margin-bottom: 16px;
+      position: relative; z-index: 1;
+    }
+    .modal-team {
+      display: flex; flex-direction: column; align-items: center; gap: 6px;
+      min-width: 0;
+    }
+    .modal-team img, .modal-team-placeholder {
+      width: 80px; height: 80px;
+      object-fit: contain;
+      border-radius: 14px;
+      background: var(--bg);
+      padding: 8px;
+      border: 1px solid var(--border);
+    }
+    .modal-team-placeholder {
+      display: grid; place-items: center;
+      font-weight: 800; font-size: 28px;
+      color: var(--text3);
+    }
+    .modal-team-name {
+      font-weight: 700; font-size: 15px; color: var(--text);
+      text-align: center;
+      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+      max-width: 100%;
+    }
+    .modal-team-tag {
+      font-size: 9px; letter-spacing: .14em; color: var(--text3);
+      font-weight: 700; text-transform: uppercase;
+    }
+    .modal-vs {
+      display: flex; flex-direction: column; align-items: center; gap: 4px;
+      min-width: 78px;
+    }
+    .modal-vs-vs {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px; font-weight: 800; color: var(--text3);
+    }
+    .modal-vs-score {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 28px; font-weight: 800; color: var(--text);
+    }
+    .modal-vs-status {
+      font-size: 11px; color: var(--text3); font-weight: 600;
+    }
+    .modal-mega-pick {
+      display: grid; grid-template-columns: auto 1fr;
+      gap: 14px; align-items: center;
+      padding: 12px 14px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      position: relative; z-index: 1;
+    }
+    .modal-mega-pick-body { min-width: 0; }
+    .modal-mega-market {
+      font-size: 11px; text-transform: uppercase; letter-spacing: .08em;
+      color: var(--green); font-weight: 700; margin-bottom: 2px;
+    }
+    .modal-mega-selection {
+      font-size: 16px; font-weight: 700; color: var(--text);
+      margin-bottom: 4px;
+    }
+    .modal-mega-meta { font-size: 12px; color: var(--text2); }
+    .ctx-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px; margin: 14px 0 18px;
+    }
+    .ctx-panel {
+      background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 10px; padding: 10px 12px;
+    }
+    .ctx-panel h4 {
+      font-size: 12px; font-weight: 800; text-transform: uppercase;
+      letter-spacing: .04em; color: var(--green); margin-bottom: 6px;
+    }
+    .ctx-panel p, .ctx-panel li {
+      font-size: 12.5px; color: var(--text2); line-height: 1.5;
+    }
+    .ctx-panel ul { padding-left: 16px; margin: 0; }
+    .ctx-panel-adjust {
+      background: linear-gradient(135deg, rgba(99,102,241,.12), rgba(34,197,94,.08));
+      border-color: rgba(99,102,241,.35);
+      grid-column: 1 / -1;
+    }
+    .ctx-panel-adjust h4 { color: #a5b4fc; }
+    .ctx-panel-adjust li { font-family: 'JetBrains Mono', monospace; font-size: 11.5px; }
+    .ctx-twocol { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+    .lineup-row { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0 8px; }
+    .lineup-pill {
+      font-size: 11px; padding: 2px 6px; background: var(--bg);
+      border: 1px solid var(--border); border-radius: 4px;
+      color: var(--text2); white-space: nowrap;
+    }
+    .lineup-pill b { color: var(--green); margin-left: 4px; }
+    .form-row { display: flex; gap: 4px; margin-top: 4px; }
+    .form-pill {
+      display: inline-grid; place-items: center;
+      width: 18px; height: 18px; border-radius: 4px;
+      font-size: 10px; font-weight: 800;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .form-w { background: #16a34a; color: #fff; }
+    .form-l { background: #dc2626; color: #fff; }
+    .form-d { background: #6b7280; color: #fff; }
+
+    .arg-section {
+      margin-bottom: 18px;
+    }
+    .arg-section h3 {
+      font-size: 14px; font-weight: 700;
+      color: var(--green);
+      margin-bottom: 6px;
+    }
+    .arg-section p {
+      font-size: 14px; color: var(--text);
+      line-height: 1.65;
+      white-space: pre-wrap;
+    }
+    .arg-meta {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px dashed var(--border);
+      font-size: 11px; color: var(--text3);
+      display: flex; gap: 14px; flex-wrap: wrap;
+    }
+
+    /* bet form */
+    .bet-form {
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .bet-form .field input,
+    .bet-form .field select {
+      height: 38px;
+      padding: 0 12px;
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 8px;
       color: var(--text);
     }
+    .bet-form .field input:focus { outline: none; border-color: var(--green); }
+    .bet-form-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+    .bet-form-actions {
+      display: flex; gap: 10px;
+      margin-top: 6px;
+    }
 
-    .picks-bm-row {
-      padding: 10px 16px;
-      background: var(--bg3);
-      border-top: 1px solid var(--border);
-      display: flex; flex-wrap: wrap; gap: 8px; align-items: center;
+    /* ─────────────────────────────────────────────────────────────────────
+       TRACKER
+       ───────────────────────────────────────────────────────────────────── */
+    .tracker { display: flex; flex-direction: column; gap: 18px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 14px;
     }
-    .picks-bm-label {
-      font-size: 11px; font-weight: 700;
-      text-transform: uppercase; letter-spacing: .07em;
-      color: var(--text3);
-      margin-right: 4px;
+    .stat-card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
     }
-    .bm-chip {
-      background: var(--bg4); border: 1px solid var(--border);
-      border-radius: 6px; padding: 3px 9px;
-      font-size: 12px; color: var(--text2);
+    .stat-card-label {
+      font-size: 11px; color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      font-weight: 700;
     }
-    .bm-chip strong { color: var(--text); }
+    .stat-card-value {
+      margin-top: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 22px; font-weight: 800;
+    }
+    .stat-card-sub {
+      margin-top: 4px;
+      font-size: 11px; color: var(--text2);
+    }
+    .stat-card-value.pos { color: var(--green); }
+    .stat-card-value.neg { color: var(--red); }
 
-    /* ── PICK ARG TOOLTIP ──────────────────────────────── */
-    .pick-arg-full {
-      padding: 0 16px 10px;
-      font-size: 12px; color: var(--text2);
-      line-height: 1.5;
-      display: none;
-    }
-    .pick-row:hover + .pick-arg-full { display: block; }
-
-    /* ── EMPTY / LOADING ───────────────────────────────── */
-    .empty-state {
-      text-align: center;
-      padding: 60px 20px;
-      color: var(--text3);
-    }
-    .empty-icon { font-size: 40px; margin-bottom: 12px; }
-    .empty-title { font-size: 16px; font-weight: 700; color: var(--text2); margin-bottom: 6px; }
-    .empty-sub { font-size: 13px; color: var(--text3); }
-
-    .skeleton {
-      background: var(--bg2); border: 1px solid var(--border);
+    .bets-table {
+      width: 100%;
+      background: var(--bg2);
+      border: 1px solid var(--border);
       border-radius: var(--r);
       overflow: hidden;
     }
-    .skel-row {
-      padding: 18px 16px;
-      display: flex; align-items: center; gap: 12px;
+    .bets-table table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .bets-table th, .bets-table td {
+      padding: 12px 14px;
+      text-align: left;
+      font-size: 13px;
       border-bottom: 1px solid var(--border);
     }
-    .skel-bar {
-      height: 14px; border-radius: 7px;
-      background: linear-gradient(90deg, var(--bg3) 25%, var(--bg4) 50%, var(--bg3) 75%);
-      background-size: 200% 100%;
-      animation: shimmer 1.4s ease-in-out infinite;
+    .bets-table th {
+      background: var(--bg3);
+      color: var(--text3);
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
     }
-    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+    .bets-table tr:last-child td { border-bottom: none; }
+    .badge {
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 11px; font-weight: 700;
+      display: inline-block;
+    }
+    .badge-win    { background: rgba(34,197,94,.15); color: var(--green); }
+    .badge-loss   { background: rgba(239,68,68,.15); color: var(--red); }
+    .badge-push   { background: rgba(99,102,241,.15); color: var(--indigo); }
+    .badge-pending{ background: rgba(234,179,8,.15);  color: var(--yellow); }
 
-    /* ── FOOTER ────────────────────────────────────────── */
-    .footer {
-      text-align: center;
-      padding: 20px;
-      font-size: 11px; color: var(--text3);
-      border-top: 1px solid var(--border);
-      margin-top: 40px;
-      text-transform: uppercase; letter-spacing: .08em;
+    .bet-row-actions { display: flex; gap: 6px; }
+    .icon-btn {
+      width: 28px; height: 28px;
+      border-radius: 6px;
+      background: var(--bg3);
+      display: grid; place-items: center;
+      color: var(--text2);
+      transition: all .15s;
     }
+    .icon-btn:hover { background: var(--bg4); color: var(--text); }
+    .icon-btn.danger:hover { background: rgba(239,68,68,.2); color: var(--red); }
 
-    /* ── RESPONSIVE ────────────────────────────────────── */
-    @media (max-width: 900px) {
-      .layout { grid-template-columns: 1fr; padding: 12px; }
-      .sidebar { position: static; }
-      .sport-grid { grid-template-columns: repeat(4, 1fr); }
-      .match-main { gap: 8px; padding: 12px; }
-      .team-name { font-size: 13px; }
-      .score-numbers { font-size: 18px; }
-      .navbar-mid { display: none; }
-    }
-    @media (max-width: 540px) {
-      .navbar-inner { padding: 0 12px; }
-      .brand-name { display: none; }
-      .pick-row { grid-template-columns: auto 1fr auto; }
-      .pick-row .edge-pill { display: none; }
+    /* responsive */
+    @media (max-width: 640px) {
+      .navbar-inner { flex-wrap: wrap; height: auto; padding: 12px 16px; }
+      .nav-search { order: 99; max-width: none; flex-basis: 100%; }
+      .picks-grid { grid-template-columns: 1fr; }
+      .hero { flex-direction: column; align-items: flex-start; gap: 12px; }
     }
   </style>
 </head>
 <body>
 
-<!-- NAVBAR -->
-<header class="navbar">
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║ NAVBAR                                                          ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+<nav class="navbar">
   <div class="navbar-inner">
-    <div class="brand">
+    <a class="brand" href="#">
       <div class="brand-mark">IB</div>
       <div class="brand-name">Info<span>Bet</span></div>
+    </a>
+
+    <div class="nav-tabs" id="mainTabs">
+      <button class="nav-tab active" data-tab="picks">Picks del día</button>
+      <button class="nav-tab"        data-tab="live">En vivo</button>
+      <button class="nav-tab"        data-tab="tracker">Tracker</button>
     </div>
 
-    <nav class="navbar-mid" id="navTabs">
-      <button class="nav-tab" data-tab="live">
-        <span class="live-dot"></span>En Vivo
-      </button>
-      <button class="nav-tab active" data-tab="value">★ Valor</button>
-      <button class="nav-tab" data-tab="all">Todos los partidos</button>
-      <button class="nav-tab" data-tab="tracker">📊 Mi Registro</button>
-    </nav>
+    <div class="nav-search">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>
+      </svg>
+      <input type="text" id="searchInput" placeholder="Buscar equipo, jugador, mercado, liga…" autocomplete="off">
+    </div>
 
-    <div class="navbar-right">
-      <input type="date" id="dateInput" class="date-input">
-      <button id="refreshBtn" class="refresh-btn">
-        <span class="spin">↻</span> Actualizar
-      </button>
+    <div class="nav-meta">
+      <span class="nav-pill"><span class="pulse"></span> <span id="navMetaSummary">Cargando…</span></span>
     </div>
   </div>
-</header>
+</nav>
 
-<!-- LAYOUT -->
-<div class="layout">
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║ SHELL                                                           ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+<div class="shell">
 
-  <!-- SIDEBAR -->
-  <aside class="sidebar">
-    <div class="sidebar-block">
-      <div class="sidebar-title">Deporte</div>
-      <div class="sport-grid" id="sportGrid"></div>
+  <!-- ── SIDEBAR ───────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar">
+
+    <div class="panel">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+        Deporte
+      </div>
+      <div class="sport-chips" id="sportChips">
+        <button class="sport-chip active" data-sport="">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+          <span class="sport-chip-label">Todos</span>
+        </button>
+        <button class="sport-chip" data-sport="futbol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3l3.5 5L12 12l-3.5-4L12 3zM12 21l3.5-5L12 12l-3.5 4L12 21zM3 12l5 3.5L12 12 8 8.5 3 12zM21 12l-5 3.5L12 12l4-3.5L21 12z"/></svg>
+          <span class="sport-chip-label">Fútbol</span>
+        </button>
+        <button class="sport-chip" data-sport="baloncesto">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3v18M5 5l14 14M19 5L5 19"/></svg>
+          <span class="sport-chip-label">Baloncesto</span>
+        </button>
+        <button class="sport-chip" data-sport="tenis">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M3.5 8c4 1 13 1 17 0M3.5 16c4-1 13-1 17 0"/></svg>
+          <span class="sport-chip-label">Tenis</span>
+        </button>
+        <button class="sport-chip" data-sport="beisbol">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M5 8c4 4 10 4 14 0M5 16c4-4 10-4 14 0"/></svg>
+          <span class="sport-chip-label">Béisbol</span>
+        </button>
+      </div>
     </div>
 
-    <div class="sidebar-block">
-      <div class="sidebar-title">Liga</div>
-      <select id="leagueSelect" class="filter-select">
-        <option value="">Todas las ligas</option>
-      </select>
-    </div>
-
-    <div class="sidebar-block">
-      <div class="sidebar-title">Mercado</div>
-      <select id="marketSelect" class="filter-select">
-        <option value="">Todos</option>
-      </select>
-    </div>
-
-    <div class="sidebar-block">
-      <div class="sidebar-title">
-        <div class="conf-row">
-          <span>Confianza mínima</span>
-          <span class="conf-val" id="confDisplay">35%</span>
+    <div class="panel">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h12M3 18h6"/></svg>
+        Filtros
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label class="field-label">Liga</label>
+        <select class="select" id="leagueSelect"><option value="">Todas las ligas</option></select>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label class="field-label">Mercado</label>
+        <div class="market-chips" id="marketChips"></div>
+      </div>
+      <div class="field" style="margin-bottom:14px">
+        <label class="field-label">Score mínimo</label>
+        <div class="slider-row">
+          <input type="range" id="scoreSlider" min="0" max="100" step="5" value="0">
+          <span class="slider-value" id="scoreValue">0</span>
         </div>
       </div>
-      <input type="range" id="confRange" min="30" max="95" value="35">
+      <button class="btn-reset" id="resetBtn">Limpiar filtros</button>
     </div>
 
-    <div class="sidebar-block" id="statsBlock" style="display:none">
-      <div class="sidebar-title">Resumen del día</div>
-      <div id="statsRows"></div>
+    <div class="panel" id="diagnosticsPanel">
+      <div class="panel-title">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12l3 3 6-6 6 6 3-3"/></svg>
+        Fuentes activas
+      </div>
+      <div id="diagnostics" class="sources-list"></div>
     </div>
 
-    <div class="status-box" id="statusBox">Listo para actualizar.</div>
   </aside>
 
-  <!-- MAIN -->
+  <!-- ── MAIN ──────────────────────────────────────────────────── -->
   <main class="main">
-    <div class="section-tabs" id="sectionTabs">
-      <button class="stab" data-tab="live">
-        <span class="live-dot" style="width:7px;height:7px;border-radius:50%;background:var(--red);box-shadow:0 0 6px var(--red);animation:pulse 1.4s ease-in-out infinite;display:inline-block"></span>
-        En Vivo <span class="count" id="liveCount">0</span>
-      </button>
-      <button class="stab active" data-tab="value">
-        ★ Valor <span class="count" id="valueCount">0</span>
-      </button>
-      <button class="stab" data-tab="all">
-        Todos <span class="count" id="allCount">0</span>
-      </button>
-      <button class="stab" data-tab="tracker">📊 Registro</button>
+
+    <!-- HERO -->
+    <div class="hero" id="hero">
+      <div class="hero-icon">
+        <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 17l6-6 4 4 8-8"/><path d="M14 7h7v7"/></svg>
+      </div>
+      <div class="hero-text">
+        <div class="hero-title">Picks del día</div>
+        <div class="hero-sub" id="heroSub">Análisis con datos reales y argumentos extensos por Groq</div>
+      </div>
+      <div class="hero-stats">
+        <div class="hero-stat"><div class="hero-stat-num" id="heroPicks">—</div><div class="hero-stat-lbl">Picks</div></div>
+        <div class="hero-stat"><div class="hero-stat-num" id="heroValue">—</div><div class="hero-stat-lbl">Valor</div></div>
+        <div class="hero-stat"><div class="hero-stat-num" id="heroElite">—</div><div class="hero-stat-lbl">Élite</div></div>
+      </div>
     </div>
 
-    <div id="matchList"></div>
-    <div id="trackerSection" style="display:none"></div>
+    <!-- VIEW: PICKS / LIVE -->
+    <div class="section" id="picksView">
+      <div class="section-head">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l3 7h7l-5.5 4.5 2 7L12 16l-6.5 4.5 2-7L2 9h7z"/></svg>
+          <span id="picksSectionTitle">Resultados</span>
+          <span class="section-count" id="picksCount">0</span>
+        </div>
+        <div class="section-sort">
+          <select class="select" id="sortSelect">
+            <option value="score">Mejor score</option>
+            <option value="edge">Mayor edge</option>
+            <option value="time">Por hora</option>
+          </select>
+        </div>
+      </div>
+      <div class="picks-grid" id="picksGrid"></div>
+    </div>
+
+    <!-- VIEW: TRACKER -->
+    <div class="section tracker" id="trackerView" style="display:none">
+      <div class="section-head">
+        <div class="section-title">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 14l3-3 4 4 6-7"/></svg>
+          Tracker · ROI personal
+        </div>
+        <button id="autoEvalBtn" class="reset-btn" title="Auto-evaluar pendientes con resultados ESPN">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>
+          Auto-evaluar pendientes
+        </button>
+      </div>
+      <div class="stats-grid" id="statsGrid"></div>
+      <div id="autoEvalMsg" style="display:none;margin:8px 0 12px;padding:10px 12px;border-radius:8px;font-size:12px;"></div>
+      <div class="bets-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Fecha</th>
+              <th>Partido</th>
+              <th>Mercado</th>
+              <th>Selección</th>
+              <th>Cuota</th>
+              <th>Stake</th>
+              <th>Resultado</th>
+              <th>Profit</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="betsBody"></tbody>
+        </table>
+      </div>
+    </div>
+
   </main>
 </div>
 
-<footer class="footer">
-  <strong style="color:var(--green)">Info Bet</strong> — Análisis estadístico con fines informativos. Juega con responsabilidad.
-</footer>
-
-<!-- ── MODAL REGISTRO DE APUESTA ─────────────────────────────────────────── -->
-<div id="betModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:1000;align-items:center;justify-content:center;">
-  <div style="background:var(--bg2);border:1px solid var(--border2);border-radius:14px;padding:24px;width:min(94vw,460px);max-height:90vh;overflow-y:auto;">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
-      <h3 style="margin:0;color:var(--text);font-size:16px;">Registrar apuesta</h3>
-      <button onclick="closeBetModal()" style="background:none;border:none;color:var(--text3);font-size:20px;cursor:pointer;">✕</button>
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║ MODAL · Análisis 500+ palabras                                 ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+<div class="modal-overlay" id="argModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Análisis completo</div>
+      <button class="modal-close" data-close="argModal" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
     </div>
-    <div id="betModalBody"></div>
+    <div class="modal-body" id="argModalBody"></div>
   </div>
 </div>
 
-<script>
-// ─── CONSTANTS ──────────────────────────────────────────────────────────────
-const SPORTS = [
-  { id: "futbol",     label: "Fútbol",    icon: "⚽" },
-  { id: "baloncesto", label: "Basket",    icon: "🏀" },
-  { id: "beisbol",    label: "Béisbol",   icon: "⚾" },
-  { id: "tenis",      label: "Tenis",     icon: "🎾" }
-];
-
-const MARKET_LABELS = {
-  moneyline:        "Ganador",
-  totals:           "Totales",
-  spread:           "Handicap",
-  corners:          "Tiros de esquina",
-  handicap:         "Handicap asiático",
-  player_props:     "Prop jugador",
-  combo_same_game:  "Combinada",
-  btts:             "Ambos anotan",
-  cards:            "Tarjetas",
-  team_totals:      "Total equipo",
-  first_half:       "Primer tiempo"
-};
-
-const ALL_MARKET = { value: "", label: "Todos los mercados" };
-const MARKET_OPTIONS_BY_SPORT = {
-  "": [
-    ALL_MARKET,
-    { value: "moneyline",       label: "Ganador del partido" },
-    { value: "totals",          label: "Totales (más/menos de)" },
-    { value: "spread",          label: "Handicap" },
-    { value: "player_props",    label: "Estadística de jugador" },
-    { value: "combo_same_game", label: "Combinada" },
-    { value: "corners",         label: "Tiros de esquina" },
-    { value: "btts",            label: "Ambos equipos anotan" },
-    { value: "cards",           label: "Tarjetas amarillas" },
-    { value: "first_half",      label: "Primer tiempo" },
-    { value: "team_totals",     label: "Total por equipo" }
-  ],
-  futbol: [
-    ALL_MARKET,
-    { value: "moneyline",       label: "Ganador del partido" },
-    { value: "handicap",        label: "Handicap asiático" },
-    { value: "totals",          label: "Total de goles" },
-    { value: "btts",            label: "Ambos equipos anotan" },
-    { value: "corners",         label: "Tiros de esquina" },
-    { value: "cards",           label: "Tarjetas amarillas" },
-    { value: "first_half",      label: "Goles en el primer tiempo" },
-    { value: "team_totals",     label: "Goles del equipo local" },
-    { value: "player_props",    label: "Estadística de jugador" },
-    { value: "combo_same_game", label: "Combinada mismo partido" }
-  ],
-  baloncesto: [
-    ALL_MARKET,
-    { value: "moneyline",       label: "Ganador del partido" },
-    { value: "spread",          label: "Handicap por puntos" },
-    { value: "totals",          label: "Total de puntos" },
-    { value: "first_half",      label: "Puntos en el primer tiempo" },
-    { value: "player_props",    label: "Estadística de jugador" },
-    { value: "team_totals",     label: "Asistencias del equipo" },
-    { value: "combo_same_game", label: "Combinada mismo partido" }
-  ],
-  tenis: [
-    ALL_MARKET,
-    { value: "moneyline",       label: "Ganador del partido" },
-    { value: "totals",          label: "Total de juegos o sets" },
-    { value: "player_props",    label: "Tie-break en el partido" }
-  ],
-  beisbol: [
-    ALL_MARKET,
-    { value: "moneyline",       label: "Ganador del partido" },
-    { value: "totals",          label: "Total de carreras" },
-    { value: "player_props",    label: "Estadística de bateador o lanzador" },
-    { value: "team_totals",     label: "Hits o carreras del equipo" },
-    { value: "combo_same_game", label: "Combinada mismo partido" }
-  ]
-};
-
-const TZ = "America/Bogota";
-const CACHE_KEY = "infobet_picks_v3_";
-
-// ─── STATE ───────────────────────────────────────────────────────────────────
-const state = {
-  tab: "value",
-  sport: "",
-  league: "",
-  market: "",
-  minConf: 35,
-  picks: [],
-  valuePicks: [],
-  livePicks: [],
-  loading: false
-};
-
-// ─── PICK REGISTRY (avoids JSON in onclick attrs) ────────────────────────────
-const _pickRegistry = new Map();
-function registerPick(pick) {
-  const key = pick.id || (pick.event + "|" + pick.selection + "|" + pick.market);
-  _pickRegistry.set(key, pick);
-  return key;
-}
-
-// ─── UTILS ───────────────────────────────────────────────────────────────────
-function esc(s) {
-  if (s == null) return "";
-  return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
-}
-
-function bogotaToday() {
-  const p = new Intl.DateTimeFormat("sv-SE",{timeZone:TZ,year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
-  const m = Object.fromEntries(p.map(x=>[x.type,x.value]));
-  return `${m.year}-${m.month}-${m.day}`;
-}
-
-function formatTime(iso) {
-  if (!iso) return "";
-  try {
-    return new Intl.DateTimeFormat("es-CO",{timeZone:TZ,hour:"2-digit",minute:"2-digit"}).format(new Date(iso));
-  } catch { return ""; }
-}
-
-function formatDate(iso) {
-  if (!iso) return "";
-  try {
-    return new Intl.DateTimeFormat("es-CO",{timeZone:TZ,month:"short",day:"numeric"}).format(new Date(iso));
-  } catch { return ""; }
-}
-
-function confClass(c) {
-  return c >= 75 ? "high" : c >= 62 ? "mid" : "low";
-}
-
-function edgeLabel(edge) {
-  if (edge == null) return "";
-  const n = Number(edge);
-  if (!Number.isFinite(n)) return "";
-  const sign = n >= 0 ? "+" : "";
-  return `${sign}${(n * 100).toFixed(1)}%`;
-}
-
-function edgeClass(edge) {
-  const n = Number(edge);
-  if (n >= 0.04) return "pos";
-  if (n >= 0) return "neu";
-  return "neg";
-}
-
-function parseTeams(eventStr, homeTeam, awayTeam) {
-  if (homeTeam && awayTeam) return [homeTeam, awayTeam];
-  const parts = String(eventStr || "").split(" vs ");
-  return [parts[0]?.trim() || "Local", parts[1]?.trim() || "Visitante"];
-}
-
-// ─── DATA GROUPING ───────────────────────────────────────────────────────────
-function groupByEvent(picks) {
-  const map = new Map();
-  for (const p of picks) {
-    const key = `${p.event}||${p.leagueSlug || p.league}`;
-    if (!map.has(key)) {
-      map.set(key, {
-        key,
-        event: p.event,
-        league: p.league,
-        leagueSlug: p.leagueSlug,
-        sport: p.sport,
-        eventDateUtc: p.eventDateUtc,
-        liveStatus: p.liveStatus,
-        homeTeam: p.homeTeam || null,
-        awayTeam: p.awayTeam || null,
-        homeScore: p.homeScore || null,
-        awayScore: p.awayScore || null,
-        picks: []
-      });
-    }
-    const g = map.get(key);
-    // Actualizar score si viene con dato
-    if (p.homeScore != null) g.homeScore = p.homeScore;
-    if (p.awayScore != null) g.awayScore = p.awayScore;
-    if (p.liveStatus) g.liveStatus = p.liveStatus;
-    g.picks.push(p);
-  }
-  return [...map.values()];
-}
-
-function groupByLeague(matches) {
-  const map = new Map();
-  for (const m of matches) {
-    if (!map.has(m.league)) map.set(m.league, { league: m.league, sport: m.sport, matches: [] });
-    map.get(m.league).matches.push(m);
-  }
-  return [...map.values()];
-}
-
-function currentPicks() {
-  return state.tab === "live"
-    ? state.livePicks
-    : state.tab === "value"
-      ? state.valuePicks
-      : state.picks;
-}
-
-function filteredMatches() {
-  const base = currentPicks().map(p => ({...p}));
-  return groupByEvent(base)
-    .map(g => ({
-      ...g,
-      picks: g.picks.filter(p =>
-        (!state.sport  || p.sport === state.sport) &&
-        (!state.league || p.leagueSlug === state.league || p.league === state.league) &&
-        (!state.market || p.market === state.market) &&
-        p.confidence >= state.minConf
-      )
-    }))
-    .filter(g => g.picks.length > 0);
-}
-
-// Priority order for "most informative" pick per sport (lower index = shown first in preview)
-const SPORT_MARKET_PRIORITY = {
-  futbol:     ["btts","corners","handicap","first_half","team_totals","totals","player_props","combo_same_game","moneyline"],
-  baloncesto: ["spread","first_half","player_props","team_totals","totals","combo_same_game","moneyline"],
-  tenis:      ["player_props","totals","moneyline"],
-  beisbol:    ["player_props","team_totals","totals","combo_same_game","moneyline"]
-};
-
-// Sort by edge first; among similar edges apply sport-specific market priority
-function pickScore(p) {
-  const edge = Number(p.edge) || 0;
-  const priority = SPORT_MARKET_PRIORITY[p.sport] || [];
-  const mIdx = priority.indexOf(p.market);
-  const marketBonus = mIdx >= 0 ? (priority.length - mIdx) * 0.002 : 0;
-  return edge + marketBonus;
-}
-
-function bestPick(picks) {
-  return picks.slice().sort((a, b) => {
-    const diff = pickScore(b) - pickScore(a);
-    if (Math.abs(diff) > 0.001) return diff;
-    return Number(b.confidence) - Number(a.confidence);
-  })[0];
-}
-
-// Secondary pick: best pick from a DIFFERENT market than the primary
-function secondaryPick(picks, primary) {
-  return picks
-    .filter(p => p !== primary && p.market !== primary.market)
-    .sort((a, b) => {
-      const diff = pickScore(b) - pickScore(a);
-      if (Math.abs(diff) > 0.001) return diff;
-      return Number(b.confidence) - Number(a.confidence);
-    })[0] || null;
-}
-
-// ─── RENDER HELPERS ──────────────────────────────────────────────────────────
-function renderScoreBlock(g) {
-  const isLive = !!g.liveStatus;
-  const hasScore = g.homeScore != null && g.awayScore != null;
-
-  if (isLive && hasScore) {
-    const score = `${g.homeScore}<span class="score-sep">-</span>${g.awayScore}`;
-    return `
-      <div class="score-block">
-        <div class="score-numbers">${score}</div>
-        <div class="live-badge">${esc(g.liveStatus)}</div>
-      </div>`;
-  }
-  if (isLive) {
-    return `
-      <div class="score-block">
-        <div class="score-numbers" style="font-size:15px;color:var(--red)">EN VIVO</div>
-        <div class="live-badge">${esc(g.liveStatus)}</div>
-      </div>`;
-  }
-  const t = formatTime(g.eventDateUtc);
-  const d = formatDate(g.eventDateUtc);
-  return `
-    <div class="score-block">
-      <div class="score-numbers" style="font-size:15px;color:var(--text2)">${t || "–"}</div>
-      <div class="scheduled-badge">${d}</div>
-    </div>`;
-}
-
-function renderStakeBadge(pick) {
-  const s = pick.stake;
-  if (!s || s.stake === 0) return `<div class="stake-badge low"><span class="stake-no">No apostar — sin valor</span></div>`;
-  const cls = s.stake >= 35000 ? "" : s.stake >= 20000 ? "mid" : "low";
-  const icon = s.stake >= 35000 ? "💰" : s.stake >= 20000 ? "💵" : "🪙";
-  const fmt = s.stake.toLocaleString("es-CO");
-  return `<div class="stake-badge ${cls}"><span class="stake-icon">${icon}</span> Apostar hasta $${fmt} COP · ${s.label}</div>`;
-}
-
-function renderPickPreviewRow(pick, label) {
-  const market = MARKET_LABELS[pick.market] || pick.marketLabel || pick.market;
-  const edgeTxt = edgeLabel(pick.edge);
-  const edgeCls = edgeClass(pick.edge);
-  const arg = pick.argument || "";
-  return `
-    <div class="best-pick-row">
-      <div class="best-pick-left">
-        <div class="best-pick-label">${esc(label)}</div>
-        <div class="best-pick-selection">${esc(pick.selection)}</div>
-        <div class="best-pick-market">${esc(market)}</div>
-        <div class="best-pick-arg">${esc(arg)}</div>
-        ${renderStakeBadge(pick)}
-        <button class="register-btn" onclick="openBetModalById('${esc(registerPick(pick))}')">+ Registrar apuesta</button>
-      </div>
-      <div class="best-pick-right">
-        <div class="pill-block">
-          <div class="pill-row">
-            <span class="info-btn">?<span class="tooltip">Cuota decimal de referencia. Multiplica tu apuesta × cuota para saber el retorno total.</span></span>
-            <div class="odds-pill">${Number(pick.odds).toFixed(2)}</div>
-          </div>
-          <div class="pill-label">Cuota</div>
-        </div>
-        <div class="pill-block">
-          <div class="pill-row">
-            <span class="info-btn">?<span class="tooltip">Seguridad del modelo: qué tan lejos está la probabilidad del 50/50. &lt;55% señal débil · 55–70% moderada · &gt;72% fuerte.</span></span>
-            <div class="conf-pill ${confClass(pick.confidence)}">${pick.confidence}%</div>
-          </div>
-          <div class="pill-label">Confianza</div>
-        </div>
-        ${edgeTxt ? `
-        <div class="pill-block">
-          <div class="pill-row">
-            <span class="info-btn">?<span class="tooltip">Ventaja sobre la cuota de mercado: probabilidad del modelo − probabilidad implícita. ≥4% = pick con valor · &lt;0% = sin valor.</span></span>
-            <div class="edge-pill ${edgeCls}">${edgeTxt}</div>
-          </div>
-          <div class="pill-label">Valor</div>
-        </div>` : ""}
-      </div>
-    </div>`;
-}
-
-function renderBestPickPreview(primary, secondary) {
-  return `
-    <div class="best-pick-preview">
-      ${renderPickPreviewRow(primary, "⚡ Mejor apuesta")}
-      ${secondary ? `<div class="pick-divider"></div>${renderPickPreviewRow(secondary, "📌 También destacado")}` : ""}
-    </div>`;
-}
-
-function renderPickRows(picks) {
-  const best = bestPick(picks);
-  return picks.map(p => {
-    const isBest = p === best;
-    const market = MARKET_LABELS[p.market] || p.market;
-    const edgeTxt = edgeLabel(p.edge);
-    const edgeCls = edgeClass(p.edge);
-    const sub = p.playerName ? `👤 ${p.playerName}` : (p.teamLabel ? `🏟 ${p.teamLabel}` : "");
-    return `
-      <div class="pick-row ${isBest ? "best-row" : ""}" title="${esc(p.argument)}">
-        <div class="pick-row-market">${esc(market)}</div>
-        <div>
-          <div class="pick-row-selection">${esc(p.selection)}${isBest ? " ⭐" : ""}</div>
-          ${sub ? `<div class="pick-row-sub">${esc(sub)}</div>` : ""}
-        </div>
-        <div class="pill-block">
-          <div class="pill-row">
-            <span class="info-btn">?<span class="tooltip">Cuota decimal de referencia. Multiplica tu apuesta × cuota para saber el retorno total.</span></span>
-            <div class="odds-pill">${Number(p.odds).toFixed(2)}</div>
-          </div>
-          <div class="pill-label">Cuota</div>
-        </div>
-        <div class="pill-block">
-          <div class="pill-row">
-            <span class="info-btn">?<span class="tooltip">Seguridad del modelo: qué tan lejos está la probabilidad del 50/50. &lt;55% señal débil · 55–70% moderada · &gt;72% fuerte.</span></span>
-            <div class="conf-pill ${confClass(p.confidence)}" style="font-size:11px;">${p.confidence}%</div>
-          </div>
-          <div class="pill-label">Confianza</div>
-        </div>
-        ${edgeTxt ? `
-        <div class="pill-block">
-          <div class="pill-row">
-            <span class="info-btn">?<span class="tooltip">Ventaja sobre la cuota de mercado: probabilidad del modelo − probabilidad implícita. ≥4% = pick con valor · &lt;0% = sin valor.</span></span>
-            <div class="edge-pill ${edgeCls}">${edgeTxt}</div>
-          </div>
-          <div class="pill-label">Valor</div>
-        </div>` : ""}
-        ${p.stake && p.stake.stake > 0 ? `<div class="stake-badge ${p.stake.stake >= 35000 ? "" : p.stake.stake >= 20000 ? "mid" : "low"}" style="font-size:10px;padding:3px 7px;">💵 $${p.stake.stake.toLocaleString("es-CO")} COP</div>` : ""}
-      </div>`;
-  }).join("");
-}
-
-function renderBookmakers(pick) {
-  const bm = pick.bookmakerOdds || [];
-  if (!bm.length) return "";
-  const chips = bm.map(b =>
-    `<div class="bm-chip">${esc(b.bookmaker)}: <strong>${Number(b.odds).toFixed(2)}</strong></div>`
-  ).join("");
-  return `
-    <div class="picks-bm-row">
-      <span class="picks-bm-label">Ref CO</span>
-      ${chips}
-    </div>`;
-}
-
-function renderMatchCard(g, idx) {
-  const [home, away] = parseTeams(g.event, g.homeTeam, g.awayTeam);
-  const primary = bestPick(g.picks);
-  const secondary = secondaryPick(g.picks, primary);
-  const cardId = `card-${idx}`;
-  const panelId = `panel-${idx}`;
-  const btnId = `btn-${idx}`;
-
-  return `
-    <div class="match-card">
-      <div class="match-main" onclick="togglePanel('${panelId}','${btnId}')">
-        <div class="team-block">
-          <div class="team-name">${esc(home)}</div>
-        </div>
-        ${renderScoreBlock(g)}
-        <div class="team-block right">
-          <div class="team-name">${esc(away)}</div>
-        </div>
-      </div>
-
-      ${renderBestPickPreview(primary, secondary)}
-
-      <button class="expand-btn" id="${btnId}" onclick="togglePanel('${panelId}','${btnId}')">
-        <span>Ver todos los picks (${g.picks.length})</span>
-        <span class="chevron">▼</span>
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║ MODAL · Registrar apuesta                                       ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+<div class="modal-overlay" id="betModal">
+  <div class="modal">
+    <div class="modal-head">
+      <div class="modal-title">Registrar apuesta</div>
+      <button class="modal-close" data-close="betModal" aria-label="Cerrar">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
+    </div>
+    <div class="modal-body">
+      <form class="bet-form" id="betForm">
+        <div class="field"><label class="field-label">Partido</label><input id="betEvent" readonly></div>
+        <div class="field"><label class="field-label">Selección</label><input id="betSelection" readonly></div>
+        <div class="bet-form-grid">
+          <div class="field"><label class="field-label">Cuota tomada</label><input id="betOdds" type="number" step="0.01" required></div>
+          <div class="field"><label class="field-label">Stake (COP)</label><input id="betStake" type="number" step="1000" required></div>
+        </div>
+        <div class="bet-form-actions">
+          <button type="button" class="btn btn-secondary" data-close="betModal">Cancelar</button>
+          <button type="submit" class="btn btn-primary">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 
-      <div class="picks-panel" id="${panelId}">
-        <div class="picks-panel-header">Todos los picks del partido — ${esc(g.event)}</div>
-        ${renderPickRows(g.picks)}
-        ${renderBookmakers(primary)}
-      </div>
-    </div>`;
-}
 
-function renderLeagueGroup(lg, startIdx) {
-  const sportObj = SPORTS.find(s => s.id === lg.sport);
-  const icon = sportObj ? sportObj.icon : "🏟";
-  let html = `
-    <div class="league-group">
-      <div class="league-header">
-        <span class="league-sport-icon">${icon}</span>
-        ${esc(lg.league)}
-        <span class="league-badge">${lg.matches.length} partido${lg.matches.length > 1 ? "s" : ""}</span>
-      </div>`;
-  lg.matches.forEach((m, i) => {
-    html += renderMatchCard(m, startIdx + i);
-  });
-  html += `</div>`;
-  return html;
-}
-
-function renderMatches() {
-  const list = document.getElementById("matchList");
-  const matches = filteredMatches();
-
-  if (matches.length === 0) {
-    const msgs = {
-      live: "No hay partidos en vivo ahora mismo.",
-      value: "No hay picks con valor detectado (edge ≥ 4%). Prueba bajando la confianza mínima.",
-      all: "No hay picks para estos filtros. Cambia deporte, liga o pulsa Actualizar."
-    };
-    list.innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">📊</div>
-        <div class="empty-title">Sin resultados</div>
-        <div class="empty-sub">${msgs[state.tab] || "Sin datos."}</div>
-      </div>`;
-    return;
-  }
-
-  // Ordenar: live first, luego por hora
-  matches.sort((a, b) => {
-    const aLive = !!a.liveStatus, bLive = !!b.liveStatus;
-    if (aLive !== bLive) return aLive ? -1 : 1;
-    const ta = a.eventDateUtc ? new Date(a.eventDateUtc).getTime() : 0;
-    const tb = b.eventDateUtc ? new Date(b.eventDateUtc).getTime() : 0;
-    return ta - tb;
-  });
-
-  const leagues = groupByLeague(matches);
-  let html = "", idx = 0;
-  for (const lg of leagues) {
-    html += renderLeagueGroup(lg, idx);
-    idx += lg.matches.length;
-  }
-  list.innerHTML = html;
-}
-
-// ─── TOGGLE EXPAND ───────────────────────────────────────────────────────────
-window.togglePanel = function(panelId, btnId) {
-  const panel = document.getElementById(panelId);
-  const btn   = document.getElementById(btnId);
-  if (!panel) return;
-  const open = panel.classList.toggle("open");
-  if (btn) btn.classList.toggle("open", open);
-};
-
-// ─── COUNTS ──────────────────────────────────────────────────────────────────
-function updateCounts() {
-  const liveEvt  = new Set(state.livePicks.map(p => p.event)).size;
-  const valEvt   = new Set(state.valuePicks.map(p => p.event)).size;
-  const allEvt   = new Set(state.picks.map(p => p.event)).size;
-  document.getElementById("liveCount").textContent  = liveEvt;
-  document.getElementById("valueCount").textContent = valEvt;
-  document.getElementById("allCount").textContent   = allEvt;
-}
-
-// ─── STATS SUMMARY ───────────────────────────────────────────────────────────
-function renderStats() {
-  const block = document.getElementById("statsBlock");
-  const rows  = document.getElementById("statsRows");
-  if (!state.picks.length) { block.style.display = "none"; return; }
-  block.style.display = "block";
-
-  const valCount = state.valuePicks.length;
-  const liveCount = state.livePicks.length;
-  const avgConf = state.picks.length
-    ? Math.round(state.picks.reduce((s,p) => s + Number(p.confidence||50), 0) / state.picks.length)
-    : 0;
-  const sports = [...new Set(state.picks.map(p => p.sport))];
-
-  rows.innerHTML = `
-    <div class="stat-row"><span class="stat-k">Picks totales</span><span class="stat-v">${state.picks.length}</span></div>
-    <div class="stat-row"><span class="stat-k">Con valor ≥4%</span><span class="stat-v green">${valCount}</span></div>
-    <div class="stat-row"><span class="stat-k">En vivo</span><span class="stat-v ${liveCount > 0 ? "green" : ""}">${liveCount}</span></div>
-    <div class="stat-row"><span class="stat-k">Confianza media</span><span class="stat-v">${avgConf}%</span></div>
-    <div class="stat-row"><span class="stat-k">Deportes</span><span class="stat-v">${sports.length}</span></div>`;
-}
-
-// ─── LEAGUE SELECT ───────────────────────────────────────────────────────────
-function rebuildLeagueSelect() {
-  const sel = document.getElementById("leagueSelect");
-  const base = currentPicks().filter(p => !state.sport || p.sport === state.sport);
-  const leagues = [...new Map(
-    base.map(p => [p.leagueSlug || p.league, { value: p.leagueSlug || p.league, label: p.league }])
-  ).values()];
-  leagues.sort((a,b) => a.label.localeCompare(b.label));
-  // Reset league if it doesn't belong to current sport
-  if (state.league && !leagues.find(l => l.value === state.league)) state.league = "";
-  sel.innerHTML = `<option value="">Todas las ligas</option>` +
-    leagues.map(l => `<option value="${esc(l.value)}" ${l.value === state.league ? "selected" : ""}>${esc(l.label)}</option>`).join("");
-}
-
-// ─── FETCH & UPDATE ──────────────────────────────────────────────────────────
-function setStatus(msg, isError = false) {
-  const box = document.getElementById("statusBox");
-  box.textContent = msg;
-  box.className = "status-box" + (isError ? " error" : "");
-}
-
-function showSkeleton() {
-  document.getElementById("matchList").innerHTML = `
-    <div class="skeleton">
-      ${[1,2,3,4,5].map(()=>`
-        <div class="skel-row">
-          <div class="skel-bar" style="width:30%;flex-shrink:0"></div>
-          <div style="flex:1"></div>
-          <div class="skel-bar" style="width:20%"></div>
-        </div>`).join("")}
-    </div>`;
-}
-
-function normalizePick(raw) {
-  return {
-    id: raw.id || Math.random().toString(36).slice(2),
-    sport: raw.sport || "futbol",
-    league: raw.league || "General",
-    leagueSlug: raw.leagueSlug || null,
-    event: raw.event || "Partido",
-    market: raw.market || "moneyline",
-    marketLabel: raw.marketLabel || null,
-    playerName: raw.playerName ?? null,
-    teamLabel: raw.teamLabel ?? null,
-    lineLabel: raw.lineLabel ?? null,
-    statLabel: raw.statLabel ?? null,
-    sideLabel: raw.sideLabel ?? null,
-    propType: raw.propType ?? null,
-    selection: raw.selection || "",
-    odds: Number(raw.odds || 1.8),
-    confidence: Math.max(30, Math.min(95, Number(raw.confidence || 50))),
-    modelProb: raw.modelProb ?? null,
-    edge: raw.edge ?? null,
-    argument: raw.argument || "",
-    eventDateUtc: raw.eventDateUtc || raw.eventDate || null,
-    liveStatus: raw.liveStatus || null,
-    bookmakerOdds: Array.isArray(raw.bookmakerOdds) ? raw.bookmakerOdds : [],
-    oddsNote: raw.oddsNote || null,
-    homeTeam: raw.homeTeam || null,
-    awayTeam: raw.awayTeam || null,
-    homeScore: raw.homeScore || null,
-    awayScore: raw.awayScore || null,
-    forDate: raw.forDate || null
+<!-- ╔════════════════════════════════════════════════════════════════╗
+     ║ JS                                                              ║
+     ╚════════════════════════════════════════════════════════════════╝ -->
+<script>
+  // ──────────────────────────────────────────────────────────────────
+  // Catalogos UI (sincronizados con src/config/markets.js)
+  // ──────────────────────────────────────────────────────────────────
+  const MARKET_LABELS = {
+    moneyline:        "Ganador",
+    double_chance:    "Doble oportunidad",
+    spread:           "Hándicap",
+    handicap:         "Hándicap asiático",
+    run_line:         "Run line",
+    totals:           "Totales",
+    team_totals:      "Puntos por equipo",
+    corners:          "Tiros de esquina",
+    cards:            "Tarjetas amarillas",
+    player_props:     "Player props",
+    combo_same_game:  "Combinada mismo partido",
+    next_goal:        "Próximo gol",
+    btts_rest:        "Ambos marcan (resto)",
+    halftime_result:  "Resultado al descanso",
+    quarter_winner:   "Ganador del cuarto",
+    set_handicap:     "Hándicap de sets",
+    next_to_score:    "Próximo en anotar",
+    observation:      "Seguimiento en vivo"
   };
-}
 
-async function updatePicks() {
-  if (state.loading) return;
-  state.loading = true;
-  const btn = document.getElementById("refreshBtn");
-  btn.disabled = true;
-  btn.classList.add("loading");
-  setStatus("Consultando datos ESPN…");
-  showSkeleton();
+  const MARKET_OPTIONS_BY_SPORT = {
+    "":           [{ value: "", label: "Todos los mercados" }],
+    futbol:       [
+      { value: "", label: "Todos" },
+      { value: "moneyline",       label: "Ganador" },
+      { value: "double_chance",   label: "Doble oportunidad" },
+      { value: "totals",          label: "Goles" },
+      { value: "handicap",        label: "Hándicap" },
+      { value: "corners",         label: "Corners" },
+      { value: "cards",           label: "Tarjetas" },
+      { value: "player_props",    label: "Player props" },
+      { value: "combo_same_game", label: "Combinadas" }
+    ],
+    baloncesto:   [
+      { value: "", label: "Todos" },
+      { value: "player_props",    label: "Player props" },
+      { value: "moneyline",       label: "Ganador" },
+      { value: "spread",          label: "Hándicap" },
+      { value: "team_totals",     label: "Puntos por equipo" },
+      { value: "totals",          label: "Total partido" },
+      { value: "combo_same_game", label: "Combinadas" }
+    ],
+    tenis:        [
+      { value: "", label: "Todos" },
+      { value: "moneyline",       label: "Ganador" },
+      { value: "totals",          label: "Total juegos/sets" },
+      { value: "player_props",    label: "Player props" }
+    ],
+    beisbol:      [
+      { value: "", label: "Todos" },
+      { value: "moneyline",       label: "Ganador" },
+      { value: "totals",          label: "Total carreras" },
+      { value: "run_line",        label: "Run line" },
+      { value: "player_props",    label: "Player props" },
+      { value: "combo_same_game", label: "Combinadas" }
+    ]
+  };
 
-  const targetDate = document.getElementById("dateInput").value || bogotaToday();
+  const SPORT_LABEL = {
+    futbol: "Fútbol", baloncesto: "Baloncesto", tenis: "Tenis", beisbol: "Béisbol"
+  };
 
-  try {
-    const [picksRes, liveRes] = await Promise.all([
-      fetch(`/api/picks?targetDate=${encodeURIComponent(targetDate)}`).then(r => r.json()),
-      fetch("/api/live-picks").then(r => r.json()).catch(() => ({ picks: [] }))
-    ]);
+  // ──────────────────────────────────────────────────────────────────
+  // Estado
+  // ──────────────────────────────────────────────────────────────────
+  const state = {
+    tab: "picks",       // picks | live | tracker
+    sport: "",
+    league: "",
+    market: "",
+    minScore: 0,
+    sortBy: "score",
+    search: "",
+    picks: [],
+    livePicks: [],
+    leagueCatalog: { futbol:[], baloncesto:[], tenis:[], beisbol:[] },
+    feedHealth: null,
+    bets: [],
+    stats: null
+  };
 
-    state.picks      = (picksRes.picks      || []).map(normalizePick);
-    state.valuePicks = (picksRes.valuePicks  || []).map(normalizePick);
-    state.livePicks  = (liveRes.picks        || []).map(normalizePick);
+  // ──────────────────────────────────────────────────────────────────
+  // Helpers
+  // ──────────────────────────────────────────────────────────────────
+  const fmt = {
+    odds: v => Number(v ?? 0).toFixed(2),
+    pct:  v => v != null ? (v*100).toFixed(1) + "%" : "-",
+    cop:  v => "$" + Number(v ?? 0).toLocaleString("es-CO"),
+    time: utc => {
+      if (!utc) return "—";
+      const d = new Date(utc);
+      return d.toLocaleString("es-CO", { timeZone: "America/Bogota", day:"2-digit", month:"short", hour:"2-digit", minute:"2-digit" });
+    }
+  };
 
-    // Fallback: si no hay valuePicks del backend, computar en frontend
-    if (!state.valuePicks.length) {
-      state.valuePicks = state.picks.filter(p => Number(p.edge) >= 0.04);
+  function teamInitial(name) {
+    return String(name || "?").trim().split(/\s+/).map(w => w[0]).slice(0,2).join("").toUpperCase();
+  }
+
+  function tonneFromScore(s) {
+    if (s >= 80) return "elite";
+    if (s >= 65) return "fuerte";
+    if (s >= 50) return "razonable";
+    return "especulativo";
+  }
+
+  function formatLiveCtx(p) {
+    const c = p.liveContext || {};
+    const score = `${p.homeScore ?? 0}-${p.awayScore ?? 0}`;
+    if (p.sport === "futbol")     return `${score} · min ${c.minute ?? "—"} · quedan ~${c.remain ?? 0}'`;
+    if (p.sport === "baloncesto") return `${score} · Q${c.period ?? "—"} ${c.clock ?? ""} · ${(c.minRemain ?? 0).toFixed(1)} min restantes`;
+    if (p.sport === "tenis")      return `Sets ${c.setsHome ?? 0}-${c.setsAway ?? 0}`;
+    if (p.sport === "beisbol")    return `${score} · inning ${c.inning ?? "—"}`;
+    return score;
+  }
+
+  function debounce(fn, ms = 250) {
+    let t; return (...a) => { clearTimeout(t); t = setTimeout(() => fn(...a), ms); };
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Fetch
+  // ──────────────────────────────────────────────────────────────────
+  async function loadPicks() {
+    try {
+      const r = await fetch("/api/picks");
+      const d = await r.json();
+      state.picks = d.picks || [];
+      state.feedHealth = d.feedHealth || null;
+      renderHeroAndDiagnostics(d);
+      renderPicks();
+    } catch (err) {
+      console.error(err);
+      document.getElementById("picksGrid").innerHTML = renderEmpty("Error cargando picks", err.message);
+    }
+  }
+
+  async function loadLive() {
+    try {
+      const r = await fetch("/api/live-picks");
+      const d = await r.json();
+      state.livePicks = d.picks || [];
+      renderPicks();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  async function loadCatalog() {
+    try {
+      const r = await fetch("/api/league-catalog");
+      state.leagueCatalog = await r.json();
+      renderLeagueOptions();
+    } catch {}
+  }
+
+  async function loadTracker() {
+    try {
+      const [rb, rs] = await Promise.all([
+        fetch("/api/tracker/bets").then(x => x.json()),
+        fetch("/api/tracker/stats").then(x => x.json())
+      ]);
+      state.bets = rb || [];
+      state.stats = rs || null;
+      renderTracker();
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Render hero + diagnostics
+  // ──────────────────────────────────────────────────────────────────
+  function renderHeroAndDiagnostics(payload) {
+    const total = payload.total ?? state.picks.length;
+    const value = (payload.valuePicks?.length) ?? 0;
+    const elite = state.picks.filter(p => Number(p.score) >= 80).length;
+    document.getElementById("heroPicks").textContent = total;
+    document.getElementById("heroValue").textContent = value;
+    document.getElementById("heroElite").textContent = elite;
+    document.getElementById("navMetaSummary").textContent = `${total} picks · ${elite} élite`;
+
+    const fh = payload.feedHealth || {};
+    const order = ["espn", "mlb", "weather", "footballData", "clubelo", "sportsdb", "sofascore", "understat", "balldontlie", "groq", "oddsApi", "coOdds"];
+    const html = order.filter(k => fh[k]).map(k => {
+      const s = fh[k];
+      return `
+        <div class="source-row">
+          <span class="source-dot ${s.status}" title="${s.status}"></span>
+          <div class="source-text">
+            <div class="source-name">${s.label}</div>
+            <div class="source-detail">${s.detail}</div>
+            ${s.envVar && s.status === "missing_key" ? `<span class="source-env">${s.envVar}</span>` : ""}
+          </div>
+        </div>
+      `;
+    }).join("");
+    document.getElementById("diagnostics").innerHTML = html;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Render filtros
+  // ──────────────────────────────────────────────────────────────────
+  function renderLeagueOptions() {
+    const sel = document.getElementById("leagueSelect");
+    const sport = state.sport;
+    const list = sport ? (state.leagueCatalog[sport] || []) : [
+      ...(state.leagueCatalog.futbol||[]),
+      ...(state.leagueCatalog.baloncesto||[]),
+      ...(state.leagueCatalog.tenis||[]),
+      ...(state.leagueCatalog.beisbol||[])
+    ];
+    sel.innerHTML = `<option value="">Todas las ligas</option>` +
+      list.map(l => `<option value="${l.label}">${l.label}</option>`).join("");
+  }
+
+  function renderMarketChips() {
+    const opts = MARKET_OPTIONS_BY_SPORT[state.sport] || MARKET_OPTIONS_BY_SPORT[""];
+    const html = opts.map(o => `
+      <button class="market-chip ${state.market === o.value ? "active" : ""}" data-market="${o.value}">
+        ${o.label}
+      </button>
+    `).join("");
+    document.getElementById("marketChips").innerHTML = html;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Render picks
+  // ──────────────────────────────────────────────────────────────────
+  function applyFilters(picks) {
+    return picks.filter(p => {
+      if (state.sport  && p.sport  !== state.sport)  return false;
+      if (state.league && p.league !== state.league) return false;
+      if (state.market && p.market !== state.market) return false;
+      if (Number(p.score || 0) < state.minScore)     return false;
+      if (state.search) {
+        const hay = [p.event, p.homeTeam, p.awayTeam, p.league, p.marketLabel, p.selection, p.playerName, p.argument]
+          .filter(Boolean).join(" ").toLowerCase();
+        if (!hay.includes(state.search)) return false;
+      }
+      return true;
+    });
+  }
+
+  function sortPicks(picks) {
+    const arr = [...picks];
+    if (state.sortBy === "score")    arr.sort((a,b) => Number(b.score||0) - Number(a.score||0));
+    else if (state.sortBy === "edge") arr.sort((a,b) => Number(b.edge||0)  - Number(a.edge||0));
+    else if (state.sortBy === "time") arr.sort((a,b) => new Date(a.eventDateUtc||0) - new Date(b.eventDateUtc||0));
+    return arr;
+  }
+
+  function renderPicks() {
+    const grid = document.getElementById("picksGrid");
+    const sourceList = state.tab === "live" ? state.livePicks : state.picks;
+    const filtered = sortPicks(applyFilters(sourceList));
+    document.getElementById("picksCount").textContent = filtered.length;
+    document.getElementById("picksSectionTitle").textContent =
+      state.tab === "live" ? "En vivo ahora" : "Resultados";
+
+    if (!filtered.length) {
+      grid.innerHTML = renderEmpty(
+        state.tab === "live" ? "Nada en vivo" : "Sin picks",
+        "Ajusta los filtros o intenta otro deporte/liga."
+      );
+      return;
+    }
+    grid.innerHTML = filtered.map(renderPickCard).join("");
+  }
+
+  function renderEmpty(title, sub) {
+    return `
+      <div class="empty">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>
+        <h3>${title}</h3><p>${sub}</p>
+      </div>`;
+  }
+
+  function renderPickCard(p) {
+    const tone = p.scoreTone || tonneFromScore(Number(p.score || 0));
+    const homeImg = p.homeLogo
+      ? `<img src="${p.homeLogo}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',textContent:'${teamInitial(p.homeTeam)}'}))">`
+      : `<div class="placeholder">${teamInitial(p.homeTeam)}</div>`;
+    const awayImg = p.awayLogo
+      ? `<img src="${p.awayLogo}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'placeholder',textContent:'${teamInitial(p.awayTeam)}'}))">`
+      : `<div class="placeholder">${teamInitial(p.awayTeam)}</div>`;
+
+    const isLive = !!p.liveStatus;
+    const scoreCol = isLive
+      ? `<div class="pick-score">${p.homeScore ?? 0}-${p.awayScore ?? 0}</div>`
+      : `<div class="pick-vs">vs</div>`;
+
+    const sources = [];
+    if (p.oddsSource === "casas_colombia") sources.push("Cuotas CO");
+    else if (p.oddsSource === "the_odds_api") sources.push("Odds EU/UK");
+    if (p.argumentModel && !String(p.argumentModel).startsWith("fallback")) sources.push("Groq " + p.argumentModel.replace("llama-", "L"));
+    if (p.bookmakerCount) sources.push(`${p.bookmakerCount} casas`);
+
+    return `
+      <article class="pick tone-${tone}" data-id="${p.id}">
+        <header class="pick-head">
+          <span class="pick-league">${p.league || ""}</span>
+          ${isLive
+            ? `<span class="pick-live">${p.liveStatus}</span>`
+            : `<span class="pick-time">${fmt.time(p.eventDateUtc)}</span>`}
+        </header>
+
+        <div class="pick-event">
+          <div class="pick-team">
+            ${homeImg}
+            <div class="pick-team-name" title="${p.homeTeam || ""}">${p.homeTeam || "—"}</div>
+          </div>
+          ${scoreCol}
+          <div class="pick-team away">
+            <div class="pick-team-name" title="${p.awayTeam || ""}">${p.awayTeam || "—"}</div>
+            ${awayImg}
+          </div>
+        </div>
+
+        <div class="pick-pick ${p.pickKind === "live" ? "live" : ""} ${p.market === "observation" ? "observation" : ""}">
+          ${p.pickKind === "live"
+            ? (p.market === "observation"
+                ? `<span class="pick-pick-livebadge muted">En vivo · seguimiento</span>`
+                : `<span class="pick-pick-livebadge">Pronóstico en vivo</span>`)
+            : ""}
+          <span class="pick-pick-market">${p.marketLabel || MARKET_LABELS[p.market] || p.market}</span>
+          <span class="pick-pick-selection">${p.selection || ""}</span>
+          ${p.pickKind === "live" && p.liveContext ? `<span class="pick-pick-livectx">${formatLiveCtx(p)}</span>` : ""}
+          ${p.marketNote ? `<span class="pick-pick-note">${p.marketNote}</span>` : ""}
+        </div>
+
+        <div class="pick-meta">
+          <div class="pick-score-medal tone-${tone}" title="Score unificado del modelo">
+            <span class="pick-score-num">${p.score ?? "-"}</span>
+            <span class="pick-score-pct">%</span>
+          </div>
+          <div class="pick-score-info">
+            <span class="pick-score-tier">${p.scoreLabel || "—"}</span>
+            <span class="pick-score-data">
+              probabilidad del modelo <b>${fmt.pct(p.modelProb)}</b>
+            </span>
+            <span class="pick-score-data">
+              datos <b>${Math.round((p.dataQuality||0)*100)}%</b> · stake <b title="${p.stake?.advice || ''}">${p.stake?.label || "—"}${p.stake?.stake ? ` · ${fmt.cop(p.stake.stake)}` : ""}</b>
+            </span>
+          </div>
+        </div>
+
+        <div class="pick-actions">
+          <button class="btn btn-secondary" data-action="argument">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h12M4 18h8"/></svg>
+            ${p.market === "observation" ? "Detalle del partido" : "Análisis completo"}
+          </button>
+          ${p.market === "observation" ? "" : `
+          <button class="btn btn-primary" data-action="bet">
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+            Registrar
+          </button>`}
+        </div>
+
+        ${sources.length ? `
+          <div class="pick-sources">
+            ${sources.map(s => `<span class="source-chip">${s}</span>`).join("")}
+          </div>` : ""}
+      </article>
+    `;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Modales
+  // ──────────────────────────────────────────────────────────────────
+  function openModal(id) { document.getElementById(id).classList.add("open"); }
+  function closeModal(id) { document.getElementById(id).classList.remove("open"); }
+
+  function openArgumentModal(p) {
+    const tone = p.scoreTone || tonneFromScore(Number(p.score||0));
+    const text = p.argumentLong || p.argument || "Sin argumento disponible.";
+    const sections = parseArgumentSections(text);
+    const meta = [
+      `Modelo: ${p.argumentModel || "—"}`,
+      `Palabras: ${p.argumentWords || "—"}`,
+      `Cache: ${p.argumentFromCache ? "sí" : "no"}`
+    ];
+    const homeBig = p.homeLogo
+      ? `<img src="${p.homeLogo}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'modal-team-placeholder',textContent:'${teamInitial(p.homeTeam)}'}))">`
+      : `<div class="modal-team-placeholder">${teamInitial(p.homeTeam)}</div>`;
+    const awayBig = p.awayLogo
+      ? `<img src="${p.awayLogo}" alt="" onerror="this.replaceWith(Object.assign(document.createElement('div'),{className:'modal-team-placeholder',textContent:'${teamInitial(p.awayTeam)}'}))">`
+      : `<div class="modal-team-placeholder">${teamInitial(p.awayTeam)}</div>`;
+    const isLiveMod = !!p.liveStatus;
+    const scoreLine = isLiveMod
+      ? `<div class="modal-vs-score">${p.homeScore ?? 0} - ${p.awayScore ?? 0}</div><div class="modal-vs-status">${p.liveStatus}</div>`
+      : `<div class="modal-vs-vs">VS</div><div class="modal-vs-status">${fmt.time(p.eventDateUtc)}</div>`;
+
+    document.getElementById("argModalBody").innerHTML = `
+      <div class="modal-mega-card tone-${tone}">
+        <div class="modal-mega-league">${p.league || ""}${isLiveMod ? ' <span class="modal-mega-live">EN VIVO</span>' : ""}</div>
+        <div class="modal-mega-teams">
+          <div class="modal-team">
+            ${homeBig}
+            <div class="modal-team-name" title="${p.homeTeam || ""}">${p.homeTeam || "—"}</div>
+            <div class="modal-team-tag">LOCAL</div>
+          </div>
+          <div class="modal-vs">
+            ${scoreLine}
+          </div>
+          <div class="modal-team">
+            ${awayBig}
+            <div class="modal-team-name" title="${p.awayTeam || ""}">${p.awayTeam || "—"}</div>
+            <div class="modal-team-tag">VISITA</div>
+          </div>
+        </div>
+        <div class="modal-mega-pick">
+          <div class="pick-score-medal tone-${tone}">
+            <span class="pick-score-num">${p.score ?? "-"}</span><span class="pick-score-pct">%</span>
+          </div>
+          <div class="modal-mega-pick-body">
+            <div class="modal-mega-market">${p.marketLabel || MARKET_LABELS[p.market] || p.market}</div>
+            <div class="modal-mega-selection">${p.selection || ""}</div>
+            <div class="modal-mega-meta">
+              prob modelo <b>${fmt.pct(p.modelProb)}</b> · stake <b title="${p.stake?.advice || ''}">${p.stake?.label || "—"}${p.stake?.stake ? ` · ${fmt.cop(p.stake.stake)}` : ""}</b>${p.scoreLabel ? ` · ${p.scoreLabel}` : ""}
+            </div>
+          </div>
+        </div>
+      </div>
+      ${renderContextPanels(p)}
+      ${sections.map(s => `
+        <div class="arg-section">
+          <h3>${s.title}</h3>
+          <p>${s.body}</p>
+        </div>
+      `).join("")}
+      <div class="arg-meta">${meta.map(m => `<span>${m}</span>`).join("")}</div>
+    `;
+    openModal("argModal");
+  }
+
+  function renderContextPanels(p) {
+    const panels = [];
+
+    if (p.contextReasons?.length) {
+      panels.push(`<div class="ctx-panel ctx-panel-adjust">
+        <h4>Ajustes del contexto sobre la probabilidad</h4>
+        <p style="font-size:11px;color:var(--text3);margin:0 0 6px;">El modelo ajustó la probabilidad inicial usando estos factores reales:</p>
+        <ul>${p.contextReasons.map(r => `<li>${r}</li>`).join("")}</ul>
+      </div>`);
     }
 
-    // Cache local
-    try {
-      localStorage.setItem(CACHE_KEY + targetDate, JSON.stringify({
-        picks: picksRes.picks, valuePicks: picksRes.valuePicks, ts: Date.now()
-      }));
-    } catch {}
+    const oddsBits = [];
+    if (p.odds) oddsBits.push(`Cuota referencia: <b>${fmt.odds(p.odds)}</b>`);
+    if (p.oddsSource) {
+      const src = p.oddsSource === "casas_colombia"  ? "promedio casas Colombia"
+                : p.oddsSource === "the_odds_api"    ? "mercado EU/UK (The Odds API)"
+                : "estimada por el modelo";
+      oddsBits.push(`Origen: ${src}`);
+    }
+    if (Number.isFinite(p.edge)) oddsBits.push(`Edge: <b>${fmt.pct(p.edge)}</b>`);
+    if (oddsBits.length) {
+      panels.push(`<div class="ctx-panel"><h4>Mercado y cuota</h4><p>${oddsBits.join(" · ")}</p></div>`);
+    }
 
-    updateCounts();
-    rebuildLeagueSelect();
-    renderStats();
-    renderMatches();
+    if (p.weather) {
+      const w = p.weather;
+      const flags = [
+        w.flags?.lluvia ? "lluvia" : null,
+        w.flags?.viento ? "viento fuerte" : null,
+        w.flags?.frio   ? "frío" : null,
+        w.flags?.calor  ? "calor" : null
+      ].filter(Boolean).join(", ") || "condiciones normales";
+      panels.push(`<div class="ctx-panel">
+        <h4>Clima en sede</h4>
+        <p>${w.descripcion} · ${w.temperaturaC ?? "—"}°C · viento ${w.vientoKmh ?? "—"} km/h · lluvia ${w.lluviaMm} mm · humedad ${w.humedad ?? "—"}% (<i>${flags}</i>)</p>
+      </div>`);
+    }
 
-    const liveEvt = new Set(state.livePicks.map(p => p.event)).size;
-    setStatus(`${state.picks.length} picks · ${state.valuePicks.length} con valor · ${liveEvt} en vivo · ${targetDate}`);
-  } catch (err) {
-    setStatus("Error al cargar datos. Verifica que npm start esté activo.", true);
-    document.getElementById("matchList").innerHTML = `
-      <div class="empty-state">
-        <div class="empty-icon">⚠️</div>
-        <div class="empty-title">Error de conexión</div>
-        <div class="empty-sub">Asegúrate de tener el servidor corriendo con <code>npm start</code></div>
-      </div>`;
-  } finally {
-    state.loading = false;
-    btn.disabled = false;
-    btn.classList.remove("loading");
-  }
-}
+    if (p.injuries && (p.injuries.home?.length || p.injuries.away?.length)) {
+      const ren = (arr) => arr.slice(0, 6).map(x => `<li>${x.jugador}${x.estado ? ` — ${x.estado}` : ""}${x.detalle ? ` (${x.detalle})` : ""}</li>`).join("");
+      panels.push(`<div class="ctx-panel">
+        <h4>Bajas / Lesiones</h4>
+        <div class="ctx-twocol">
+          <div><b>${p.homeTeam || "Local"}</b><ul>${ren(p.injuries.home || []) || "<li>Sin bajas reportadas</li>"}</ul></div>
+          <div><b>${p.awayTeam || "Visita"}</b><ul>${ren(p.injuries.away || []) || "<li>Sin bajas reportadas</li>"}</ul></div>
+        </div>
+      </div>`);
+    }
 
-// ─── SPORT GRID ──────────────────────────────────────────────────────────────
-function renderSportGrid() {
-  const grid = document.getElementById("sportGrid");
-  // "Todos" button
-  let html = `<button class="sport-btn ${!state.sport ? "active" : ""}" onclick="setSport('')">
-    <span class="sport-icon">🏟</span> Todos</button>`;
-  for (const s of SPORTS) {
-    html += `<button class="sport-btn ${state.sport === s.id ? "active" : ""}" onclick="setSport('${s.id}')">
-      <span class="sport-icon">${s.icon}</span> ${esc(s.label)}</button>`;
-  }
-  grid.innerHTML = html;
-}
+    if (p.recentForm && (p.recentForm.home || p.recentForm.away)) {
+      const renderForm = (f, name) => {
+        if (!f) return "";
+        const tags = (f.partidos || []).slice(0, 5).map(g => {
+          const klass = g.resultado === "W" ? "form-w" : g.resultado === "L" ? "form-l" : "form-d";
+          return `<span class="form-pill ${klass}" title="${g.local ? "L" : "V"} vs ${g.rival || ""} (${g.marcador || "—"})">${g.resultado}</span>`;
+        }).join("");
+        return `<div><b>${name}</b> · ${f.resumen.W}V/${f.resumen.D}E/${f.resumen.L}D<div class="form-row">${tags}</div></div>`;
+      };
+      panels.push(`<div class="ctx-panel">
+        <h4>Forma reciente (últimos 5)</h4>
+        <div class="ctx-twocol">
+          ${renderForm(p.recentForm.home, p.homeTeam || "Local")}
+          ${renderForm(p.recentForm.away, p.awayTeam || "Visita")}
+        </div>
+      </div>`);
+    }
 
-window.setSport = function(id) {
-  state.sport = id;
-  renderSportGrid();
-  rebuildLeagueSelect();
-  buildMarketSelect();
-  renderMatches();
-};
+    if (p.mlbMatchup && (p.mlbMatchup.homePitcher || p.mlbMatchup.awayPitcher)) {
+      const mm = p.mlbMatchup;
+      const pRow = (pit, name) => pit
+        ? `<li><b>${name}</b> · ${pit.name || "—"} · ERA <b>${(pit.era ?? 0).toFixed(2)}</b> · WHIP <b>${(pit.whip ?? 0).toFixed(2)}</b> · K/salida <b>${(pit.kPerStart ?? 0).toFixed(1)}</b></li>`
+        : `<li><b>${name}</b> · sin abridor confirmado</li>`;
+      const bRow = (bat, name) => bat
+        ? `<li><b>${name}</b> · ${(bat.runsPerGame ?? 0).toFixed(2)} runs/g · OPS ${((bat.obp ?? 0) + (bat.slg ?? 0)).toFixed(3)} · AVG ${(bat.avg ?? 0).toFixed(3)}</li>`
+        : "";
+      panels.push(`<div class="ctx-panel"><h4>Duelo de lanzadores (MLB Stats API)</h4>
+        <ul>${pRow(mm.homePitcher, p.homeTeam || "Local")}${pRow(mm.awayPitcher, p.awayTeam || "Visita")}</ul>
+        <h4 style="margin-top:8px">Ofensiva del rival</h4>
+        <ul>${bRow(mm.homeBatting, p.homeTeam || "Local")}${bRow(mm.awayBatting, p.awayTeam || "Visita")}</ul>
+      </div>`);
+    }
 
-// ─── MARKET SELECT ───────────────────────────────────────────────────────────
-function buildMarketSelect() {
-  const options = MARKET_OPTIONS_BY_SPORT[state.sport] || MARKET_OPTIONS_BY_SPORT[""];
-  const sel = document.getElementById("marketSelect");
-  // Reset market filter if current value not in new options
-  if (!options.find(o => o.value === state.market)) state.market = "";
-  sel.innerHTML = options.map(o =>
-    `<option value="${esc(o.value)}" ${o.value === state.market ? "selected" : ""}>${esc(o.label)}</option>`
-  ).join("");
-}
+    if (p.clubElo) {
+      const ce = p.clubElo;
+      const pHomePct = (ce.pHomeFromElo * 100).toFixed(1);
+      const pAwayPct = ((1 - ce.pHomeFromElo) * 100).toFixed(1);
+      panels.push(`<div class="ctx-panel">
+        <h4>Rating ELO oficial (clubelo.com)</h4>
+        <ul>
+          <li><b>${p.homeTeam || "Local"}</b> · ELO <b>${ce.eloHome}</b></li>
+          <li><b>${p.awayTeam || "Visita"}</b> · ELO <b>${ce.eloAway}</b></li>
+        </ul>
+        <p>Probabilidad ELO (con ventaja local): <b>${p.homeTeam || "Local"} ${pHomePct}%</b> · <b>${p.awayTeam || "Visita"} ${pAwayPct}%</b>. ELO captura ~10 años de resultados; el modelo lo mezcla con forma reciente y contexto.</p>
+      </div>`);
+    }
 
-// ─── BOOTSTRAP ───────────────────────────────────────────────────────────────
-function bindEvents() {
-  // Nav tabs
-  function switchTab(tab) {
-    state.tab = tab;
-    document.querySelectorAll("#navTabs [data-tab], #sectionTabs [data-tab]")
-      .forEach(b => b.classList.toggle("active", b.dataset.tab === tab));
-    const isTracker = tab === "tracker";
-    document.getElementById("matchList").style.display     = isTracker ? "none" : "";
-    document.getElementById("trackerSection").style.display = isTracker ? "" : "none";
-    if (isTracker) { loadTracker(); return; }
-    rebuildLeagueSelect();
-    renderMatches();
-  }
+    if (p.sofascore) {
+      const ss = p.sofascore;
+      const lineupHtml = (lu, name) => {
+        if (!lu?.length) return "";
+        const xi = lu.filter(p => !p.suplente).slice(0, 11).map(pl =>
+          `<span class="lineup-pill" title="${pl.posicion || ""}${pl.rating ? ` · rating ${pl.rating}` : ""}">${pl.numero ? `${pl.numero} ` : ""}${pl.nombre}${pl.rating ? ` <b>${pl.rating}</b>` : ""}</span>`
+        ).join("");
+        return `<div><b>${name}</b><div class="lineup-row">${xi || "<i>Alineación pendiente</i>"}</div></div>`;
+      };
+      panels.push(`<div class="ctx-panel">
+        <h4>Alineación confirmada (SofaScore)</h4>
+        ${lineupHtml(ss.homeLineup, p.homeTeam || "Local")}
+        ${lineupHtml(ss.awayLineup, p.awayTeam || "Visita")}
+        ${ss.confirmed === false ? '<p style="color:var(--text3);font-size:11px;margin-top:6px">Alineación probable (no confirmada por club)</p>' : ""}
+      </div>`);
+    }
 
-  document.getElementById("navTabs").addEventListener("click", e => {
-    const btn = e.target.closest("[data-tab]");
-    if (btn) switchTab(btn.dataset.tab);
-  });
-
-  document.getElementById("sectionTabs").addEventListener("click", e => {
-    const btn = e.target.closest("[data-tab]");
-    if (btn) switchTab(btn.dataset.tab);
-  });
-
-  document.getElementById("leagueSelect").addEventListener("change", e => {
-    state.league = e.target.value;
-    renderMatches();
-  });
-
-  document.getElementById("marketSelect").addEventListener("change", e => {
-    state.market = e.target.value;
-    renderMatches();
-  });
-
-  document.getElementById("confRange").addEventListener("input", e => {
-    state.minConf = Number(e.target.value);
-    document.getElementById("confDisplay").textContent = `${state.minConf}%`;
-    renderMatches();
-  });
-
-  document.getElementById("betModal").addEventListener("click", e => {
-    if (e.target === document.getElementById("betModal")) closeBetModal();
-  });
-
-  document.getElementById("refreshBtn").addEventListener("click", updatePicks);
-
-  document.getElementById("dateInput").addEventListener("change", updatePicks);
-}
-
-// ─── TRACKER ─────────────────────────────────────────────────────────────────
-let _trackerBets = [];
-
-function fmtCOP(n) {
-  if (n == null) return "—";
-  const abs = Math.abs(n).toLocaleString("es-CO");
-  return n >= 0 ? `+$${abs}` : `-$${Math.abs(n).toLocaleString("es-CO")}`;
-}
-function roiColor(roi) { return roi == null ? "" : roi >= 0 ? "green" : "red"; }
-
-async function loadTracker() {
-  try {
-    const [statsRes, betsRes] = await Promise.all([
-      fetch("/api/tracker/stats"),
-      fetch("/api/tracker/bets"),
-    ]);
-    const stats = await statsRes.json();
-    _trackerBets = await betsRes.json();
-    renderTracker(stats, _trackerBets);
-  } catch (e) {
-    document.getElementById("trackerSection").innerHTML =
-      `<div class="empty-tracker"><div class="empty-tracker-icon">⚠️</div>Error cargando registro: ${e.message}</div>`;
-  }
-}
-
-function renderTracker(stats, bets) {
-  const o = stats.overall || {};
-  const profitCls = (o.profit || 0) >= 0 ? "green" : "red";
-  const roiCls    = roiColor(o.roi);
-
-  const sportRows = Object.entries(stats.bySport || {}).map(([s, d]) => `
-    <tr>
-      <td>${s}</td><td>${d.resolved}/${d.bets}</td>
-      <td>${d.winRate != null ? d.winRate + "%" : "—"}</td>
-      <td class="${roiColor(d.roi)}">${d.roi != null ? d.roi + "%" : "—"}</td>
-      <td class="${(d.profit||0)>=0?"green":"red"}">${fmtCOP(d.profit)} COP</td>
-    </tr>`).join("") || `<tr><td colspan="5" style="color:var(--text3);text-align:center">Sin datos aún</td></tr>`;
-
-  const confRows = Object.entries(stats.byConf || {}).map(([tier, d]) => `
-    <tr>
-      <td>${tier}</td><td>${d.resolved}/${d.bets}</td>
-      <td>${d.winRate != null ? d.winRate + "%" : "—"}</td>
-      <td class="${roiColor(d.roi)}">${d.roi != null ? d.roi + "%" : "—"}</td>
-    </tr>`).join("");
-
-  const betRows = bets.slice(0, 50).map(b => {
-    const resultBadge = `<span class="result-badge ${b.result}">${
-      {win:"✅ Ganó", loss:"❌ Perdió", push:"↩️ Push", pending:"⏳ Pendiente"}[b.result] || b.result
-    }</span>`;
-    const profitTxt = b.profit != null ? `<span class="${b.profit>=0?"green":"red"}">${fmtCOP(b.profit)} COP</span>` : "—";
-    const actionBtns = b.result === "pending"
-      ? `<div class="result-btns">
-          <button class="result-btn" onclick="markResult('${b.id}','win')">✅ Ganó</button>
-          <button class="result-btn" onclick="markResult('${b.id}','loss')">❌ Perdió</button>
-          <button class="result-btn" onclick="markResult('${b.id}','push')">↩️ Push</button>
-        </div>`
-      : `<button class="result-btn del" onclick="deleteBetEntry('${b.id}')">🗑</button>`;
-    return `<tr>
-      <td style="max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(b.event)}">${esc(b.event)}</td>
-      <td style="max-width:140px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" title="${esc(b.selection)}">${esc(b.selection)}</td>
-      <td>${b.odds}</td>
-      <td>$${(b.stake||0).toLocaleString("es-CO")}</td>
-      <td>${resultBadge}</td>
-      <td>${profitTxt}</td>
-      <td>${actionBtns}</td>
-    </tr>`;
-  }).join("") || `<tr><td colspan="7"><div class="empty-tracker" style="padding:30px 0">
-    <div class="empty-tracker-icon">📋</div>
-    <div>Aún no hay apuestas registradas.</div>
-    <div style="font-size:12px;margin-top:6px">Pulsa <strong>+ Registrar apuesta</strong> en cualquier pick del modelo.</div>
-  </div></td></tr>`;
-
-  document.getElementById("trackerSection").innerHTML = `
-  <div class="tracker-wrap">
-    <div class="tracker-header">
-      <div class="tracker-title">📊 Mi Registro de Apuestas</div>
-      <div class="tracker-actions">
-        <button class="trk-btn" onclick="exportBets()">⬇ Exportar CSV</button>
-        <button class="trk-btn primary" onclick="loadTracker()">↻ Actualizar</button>
-      </div>
-    </div>
-
-    <!-- KPI cards -->
-    <div class="stat-cards">
-      <div class="stat-card">
-        <div class="stat-card-label">Apuestas</div>
-        <div class="stat-card-value">${o.bets || 0}</div>
-        <div class="stat-card-sub">${o.resolved || 0} resueltas</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-label">Aciertos</div>
-        <div class="stat-card-value ${o.wins > 0 ? "green" : ""}">${o.wins || 0}</div>
-        <div class="stat-card-sub">de ${o.resolved || 0} resueltas</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-label">Win Rate</div>
-        <div class="stat-card-value ${o.winRate >= 55 ? "green" : o.winRate < 45 ? "red" : ""}">${o.winRate != null ? o.winRate + "%" : "—"}</div>
-        <div class="stat-card-sub">últimos 30d: ${stats.last30d?.winRate != null ? stats.last30d.winRate + "%" : "—"}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-label">ROI</div>
-        <div class="stat-card-value ${roiCls}">${o.roi != null ? o.roi + "%" : "—"}</div>
-        <div class="stat-card-sub">últimos 7d: ${stats.last7d?.roi != null ? stats.last7d.roi + "%" : "—"}</div>
-      </div>
-      <div class="stat-card">
-        <div class="stat-card-label">Ganancia neta</div>
-        <div class="stat-card-value ${profitCls}" style="font-size:17px">${fmtCOP(o.profit)}</div>
-        <div class="stat-card-sub">COP · apostado: $${(o.staked||0).toLocaleString("es-CO")}</div>
-      </div>
-    </div>
-
-    <!-- Por deporte -->
-    <div class="trk-section-title">Por deporte</div>
-    <table class="trk-table">
-      <thead><tr><th>Deporte</th><th>Resueltas</th><th>Win%</th><th>ROI</th><th>Ganancia</th></tr></thead>
-      <tbody>${sportRows}</tbody>
-    </table>
-
-    <!-- Por nivel de confianza -->
-    <div class="trk-section-title">Por nivel de confianza del modelo</div>
-    <table class="trk-table">
-      <thead><tr><th>Confianza</th><th>Resueltas</th><th>Win%</th><th>ROI</th></tr></thead>
-      <tbody>${confRows || `<tr><td colspan="4" style="color:var(--text3);text-align:center">Sin datos</td></tr>`}</tbody>
-    </table>
-
-    <!-- Historial -->
-    <div class="trk-section-title">Historial reciente</div>
-    <div style="overflow-x:auto">
-      <table class="trk-table">
-        <thead><tr><th>Partido</th><th>Pick</th><th>Cuota</th><th>Apostado</th><th>Resultado</th><th>Ganancia</th><th></th></tr></thead>
-        <tbody>${betRows}</tbody>
-      </table>
-    </div>
-  </div>`;
-}
-
-async function markResult(id, result) {
-  await fetch(`/api/tracker/bets/${id}`, {
-    method: "PATCH", headers: {"Content-Type":"application/json"},
-    body: JSON.stringify({ result })
-  });
-  await loadTracker();
-}
-
-async function deleteBetEntry(id) {
-  if (!confirm("¿Eliminar esta apuesta del registro?")) return;
-  await fetch(`/api/tracker/bets/${id}`, { method: "DELETE" });
-  await loadTracker();
-}
-
-function exportBets() {
-  const rows = [["id","fecha","deporte","liga","partido","pick","cuota","apostado","resultado","ganancia"]];
-  for (const b of _trackerBets) {
-    rows.push([b.id, b.recordedAt?.slice(0,10), b.sport, b.league, b.event,
-      b.selection, b.odds, b.stake, b.result, b.profit ?? ""]);
-  }
-  const csv = rows.map(r => r.map(v => `"${String(v??'').replace(/"/g,'""')}"`).join(",")).join("\n");
-  const a = document.createElement("a");
-  a.href = "data:text/csv;charset=utf-8," + encodeURIComponent(csv);
-  a.download = `infobet-registro-${new Date().toISOString().slice(0,10)}.csv`;
-  a.click();
-}
-
-function openBetModalById(key) {
-  const pick = _pickRegistry.get(key);
-  if (!pick) return alert("No se encontró el pick. Recarga la página.");
-  openBetModal(pick);
-}
-
-function openBetModal(pick) {
-  window._modalPick = pick;
-  const stake = (pick.stake?.stake) || pick.stake || 20000;
-  document.getElementById("betModalBody").innerHTML = `
-    <div class="modal-field">
-      <label class="modal-label">Partido</label>
-      <input class="modal-input" id="mEvent" value="${esc(pick.event||'')}" readonly style="opacity:.7">
-    </div>
-    <div class="modal-field">
-      <label class="modal-label">Pick seleccionado</label>
-      <input class="modal-input" id="mSelection" value="${esc(pick.selection||'')}" readonly style="opacity:.7">
-    </div>
-    <div class="modal-row">
-      <div class="modal-field">
-        <label class="modal-label">Cuota real en la casa</label>
-        <input class="modal-input" id="mOdds" type="number" step="0.01" min="1.01" value="${pick.odds}">
-      </div>
-      <div class="modal-field">
-        <label class="modal-label">Monto a apostar (COP)</label>
-        <input class="modal-input" id="mStake" type="number" step="5000" min="1000" value="${stake}">
-      </div>
-    </div>
-    <div style="font-size:11px;color:var(--text3);margin-bottom:14px;">
-      Kelly recomienda: <strong style="color:var(--green)">$${Number(stake).toLocaleString("es-CO")} COP</strong>. Puedes ajustar según tu criterio.
-    </div>
-    <button class="modal-submit" onclick="submitBet()">✅ Registrar apuesta</button>`;
-  document.getElementById("betModal").style.display = "flex";
-}
-
-function closeBetModal() {
-  document.getElementById("betModal").style.display = "none";
-}
-
-async function submitBet() {
-  const pick  = window._modalPick;
-  const odds  = parseFloat(document.getElementById("mOdds").value);
-  const stake = parseInt(document.getElementById("mStake").value, 10);
-  if (!pick) return alert("Error: pick no encontrado.");
-  if (!odds || odds <= 1 || !stake || stake < 1000) return alert("Ingresa cuota (>1) y monto válidos.");
-  try {
-    const res = await fetch("/api/tracker/bets", {
-      method: "POST", headers: {"Content-Type":"application/json"},
-      body: JSON.stringify({
-        sport: pick.sport, league: pick.league, event: pick.event,
-        market: pick.market, marketLabel: pick.marketLabel || pick.market,
-        selection: pick.selection, odds, stake,
-        modelProb: pick.modelProb, modelEdge: pick.edge,
-        modelConfidence: pick.confidence, argument: pick.argument
-      })
-    });
-    if (!res.ok) { const err = await res.json(); throw new Error(err.error || res.statusText); }
-    closeBetModal();
-    alert(`✅ Apuesta registrada: $${stake.toLocaleString("es-CO")} COP @ ${odds}`);
-  } catch (e) { alert("Error al registrar: " + e.message); }
-}
-
-async function bootstrap() {
-  const today = bogotaToday();
-  document.getElementById("dateInput").value = today;
-
-  renderSportGrid();
-  buildMarketSelect();
-  bindEvents();
-
-  // Try cache first
-  try {
-    const raw = localStorage.getItem(CACHE_KEY + today);
-    if (raw) {
-      const cached = JSON.parse(raw);
-      if (cached.ts && Date.now() - cached.ts < 30 * 60 * 1000) {
-        state.picks      = (cached.picks      || []).map(normalizePick);
-        state.valuePicks = (cached.valuePicks  || []).map(normalizePick);
-        if (!state.valuePicks.length) state.valuePicks = state.picks.filter(p => Number(p.edge) >= 0.04);
-        updateCounts();
-        rebuildLeagueSelect();
-        renderStats();
-        renderMatches();
-        setStatus(`Cache local (${new Date(cached.ts).toLocaleTimeString()}) · Pulsa Actualizar para refrescar.`);
-        return;
+    if (p.matchInfo) {
+      const mi = p.matchInfo;
+      const bits = [];
+      if (mi.matchday) bits.push(`Jornada <b>${mi.matchday}</b>`);
+      if (mi.stage && mi.stage !== "REGULAR_SEASON") bits.push(`Fase <b>${mi.stage.replace(/_/g, " ")}</b>`);
+      if (mi.group) bits.push(`Grupo <b>${mi.group.replace(/^GROUP_/, "")}</b>`);
+      if (mi.referee) bits.push(`Árbitro <b>${mi.referee}</b>`);
+      if (mi.status) bits.push(`Estado <b>${mi.status.toLowerCase().replace(/_/g, " ")}</b>`);
+      if (bits.length) {
+        panels.push(`<div class="ctx-panel"><h4>Detalles del partido (football-data)</h4><p>${bits.join(" · ")}</p></div>`);
       }
     }
-  } catch {}
 
-  await updatePicks();
-}
+    if (p.officialStandings && (p.officialStandings.home || p.officialStandings.away)) {
+      const row = (s, name) => s
+        ? `<li><b>${name}</b>: pos <b>${s.posicion}°</b> · ${s.pts} pts (${s.g}V/${s.e}E/${s.p}D) · GF ${s.gf} · GC ${s.gc} · dif ${s.dif}${s.forma ? ` · racha <code>${s.forma}</code>` : ""}</li>`
+        : "";
+      panels.push(`<div class="ctx-panel">
+        <h4>Tabla oficial (football-data.org)</h4>
+        <ul>${row(p.officialStandings.home, p.homeTeam || "Local")}${row(p.officialStandings.away, p.awayTeam || "Visita")}</ul>
+      </div>`);
+    }
 
-bootstrap();
+    if (p.standings && (p.standings.home || p.standings.away)) {
+      const row = (s, name) => s
+        ? `<li><b>${name}</b>: pos ${s.posicion ?? "—"} · pts ${s.puntos ?? "—"} · pj ${s.partidos ?? "—"}${s.diferencia ? ` · dif ${s.diferencia}` : ""}${s.forma ? ` · racha ${s.forma}` : ""}</li>`
+        : "";
+      panels.push(`<div class="ctx-panel">
+        <h4>Posición en la tabla</h4>
+        <ul>${row(p.standings.home, p.homeTeam || "Local")}${row(p.standings.away, p.awayTeam || "Visita")}</ul>
+      </div>`);
+    }
+
+    if (p.record && (p.record.home || p.record.away)) {
+      const row = (r, name) => r
+        ? `<li><b>${name}</b>: total ${r.total ?? "—"}${r.local ? ` · local ${r.local}` : ""}${r.visita ? ` · visita ${r.visita}` : ""}</li>`
+        : "";
+      panels.push(`<div class="ctx-panel">
+        <h4>Récord local vs visitante</h4>
+        <ul>${row(p.record.home, p.homeTeam || "Local")}${row(p.record.away, p.awayTeam || "Visita")}</ul>
+      </div>`);
+    }
+
+    if (p.venue?.nombre) {
+      panels.push(`<div class="ctx-panel">
+        <h4>Sede</h4>
+        <p>${p.venue.nombre}${p.venue.ciudad ? ` · ${p.venue.ciudad}` : ""}${p.venue.pais ? `, ${p.venue.pais}` : ""} · ${p.venue.indoor ? "techado" : "al aire libre"}</p>
+      </div>`);
+    }
+
+    if (!panels.length) return "";
+    return `<div class="ctx-grid">${panels.join("")}</div>`;
+  }
+
+  function parseArgumentSections(text) {
+    if (!text) return [];
+    const blocks = String(text).split(/\n\s*\*\*[0-9]+\.\s+/).slice(1);
+    const titles = [...String(text).matchAll(/\*\*([0-9]+\.\s+[^*]+)\*\*/g)].map(m => m[1].trim());
+    if (!blocks.length) return [{ title: "Análisis", body: String(text).replace(/\*\*/g, "") }];
+    return blocks.map((b, i) => ({
+      title: titles[i] || `Sección ${i+1}`,
+      body:  b.replace(/^\*\*/, "").replace(/\*\*$/, "").replace(/\*\*/g, "").trim()
+    }));
+  }
+
+  function openBetModal(p) {
+    document.getElementById("betEvent").value     = p.event || "";
+    document.getElementById("betSelection").value = p.selection || "";
+    document.getElementById("betOdds").value      = Number(p.odds || 1.85).toFixed(2);
+    document.getElementById("betStake").value     = p.stake?.stake || 10000;
+    document.getElementById("betForm").dataset.pickId = p.id;
+    openModal("betModal");
+  }
+
+  document.getElementById("betForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pickId = e.target.dataset.pickId;
+    const p = state.picks.find(x => x.id === pickId) || state.livePicks.find(x => x.id === pickId);
+    if (!p) return;
+    const body = {
+      sport: p.sport, league: p.league, leagueSlug: p.leagueSlug, event: p.event,
+      homeTeam: p.homeTeam, awayTeam: p.awayTeam,
+      eventDateUtc: p.eventDateUtc, sourceDateKey: p.sourceDateKey,
+      market: p.market, marketLabel: p.marketLabel, selection: p.selection,
+      sideLabel: p.sideLabel, lineLabel: p.lineLabel,
+      odds: Number(document.getElementById("betOdds").value),
+      stake: Number(document.getElementById("betStake").value),
+      modelProb: p.modelProb, modelEdge: p.edge,
+      score: p.score, scoreLabel: p.scoreLabel,
+      argument: p.argument
+    };
+    const r = await fetch("/api/tracker/bets", {
+      method: "POST", headers: { "Content-Type":"application/json" },
+      body: JSON.stringify(body)
+    });
+    if (r.ok) {
+      closeModal("betModal");
+      if (state.tab === "tracker") loadTracker();
+    } else {
+      alert("No se pudo registrar la apuesta.");
+    }
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Tracker render
+  // ──────────────────────────────────────────────────────────────────
+  function renderTracker() {
+    const s = state.stats?.overall;
+    if (s) {
+      document.getElementById("statsGrid").innerHTML = `
+        ${statCard("ROI",        s.roi != null ? s.roi.toFixed(2) + "%" : "—", `${s.resolved} resueltas`, s.roi >= 0 ? "pos" : "neg")}
+        ${statCard("Profit",     fmt.cop(s.profit), `de ${fmt.cop(s.staked)} stake`, s.profit >= 0 ? "pos" : "neg")}
+        ${statCard("Win rate",   s.winRate != null ? s.winRate + "%" : "—", `${s.wins}-${s.losses}-${s.pushes}`)}
+        ${statCard("Apuestas",   s.bets, `${s.bets - s.resolved} pendientes`)}
+      `;
+    }
+    const rows = (state.bets || []).map(b => `
+      <tr>
+        <td>${fmt.time(b.recordedAt)}</td>
+        <td>${b.event || ""}</td>
+        <td>${b.marketLabel || b.market || "—"}</td>
+        <td>${b.selection || ""}</td>
+        <td>${fmt.odds(b.odds)}</td>
+        <td>${fmt.cop(b.stake)}</td>
+        <td><span class="badge badge-${b.result}">${b.result}</span></td>
+        <td style="color:${(b.profit||0)>=0 ? 'var(--green)' : 'var(--red)'}">${b.profit != null ? fmt.cop(b.profit) : "—"}</td>
+        <td>
+          <div class="bet-row-actions">
+            ${b.result === "pending" ? `
+              <button class="icon-btn" title="Win"   data-bet="${b.id}" data-result="win">✓</button>
+              <button class="icon-btn" title="Loss"  data-bet="${b.id}" data-result="loss">✗</button>
+              <button class="icon-btn" title="Push"  data-bet="${b.id}" data-result="push">=</button>` : ""}
+            <button class="icon-btn danger" title="Eliminar" data-del="${b.id}">🗑</button>
+          </div>
+        </td>
+      </tr>
+    `).join("");
+    document.getElementById("betsBody").innerHTML = rows || `<tr><td colspan="9" style="text-align:center;color:var(--text3);padding:24px">Sin apuestas registradas todavía.</td></tr>`;
+  }
+
+  function statCard(lbl, val, sub, tone) {
+    return `<div class="stat-card">
+      <div class="stat-card-label">${lbl}</div>
+      <div class="stat-card-value ${tone||""}">${val}</div>
+      <div class="stat-card-sub">${sub}</div>
+    </div>`;
+  }
+
+  // ──────────────────────────────────────────────────────────────────
+  // Eventos
+  // ──────────────────────────────────────────────────────────────────
+  document.getElementById("mainTabs").addEventListener("click", (e) => {
+    const btn = e.target.closest(".nav-tab"); if (!btn) return;
+    document.querySelectorAll(".nav-tab").forEach(t => t.classList.remove("active"));
+    btn.classList.add("active");
+    state.tab = btn.dataset.tab;
+    document.getElementById("picksView").style.display    = (state.tab === "tracker") ? "none" : "";
+    document.getElementById("trackerView").style.display  = (state.tab === "tracker") ? "" : "none";
+    document.getElementById("hero").style.display         = (state.tab === "tracker") ? "none" : "";
+    if (state.tab === "tracker") loadTracker();
+    else if (state.tab === "live") { loadLive(); renderPicks(); }
+    else renderPicks();
+  });
+
+  document.getElementById("sportChips").addEventListener("click", (e) => {
+    const chip = e.target.closest(".sport-chip"); if (!chip) return;
+    document.querySelectorAll(".sport-chip").forEach(c => c.classList.remove("active"));
+    chip.classList.add("active");
+    state.sport = chip.dataset.sport;
+    state.market = "";
+    renderLeagueOptions();
+    renderMarketChips();
+    renderPicks();
+  });
+
+  document.getElementById("leagueSelect").addEventListener("change", (e) => {
+    state.league = e.target.value;
+    renderPicks();
+  });
+
+  document.getElementById("marketChips").addEventListener("click", (e) => {
+    const chip = e.target.closest(".market-chip"); if (!chip) return;
+    state.market = chip.dataset.market;
+    renderMarketChips();
+    renderPicks();
+  });
+
+  const slider = document.getElementById("scoreSlider");
+  slider.addEventListener("input", (e) => {
+    state.minScore = Number(e.target.value);
+    document.getElementById("scoreValue").textContent = state.minScore;
+    renderPicks();
+  });
+
+  document.getElementById("sortSelect").addEventListener("change", (e) => {
+    state.sortBy = e.target.value;
+    renderPicks();
+  });
+
+  document.getElementById("searchInput").addEventListener("input", debounce((e) => {
+    state.search = e.target.value.trim().toLowerCase();
+    renderPicks();
+  }, 200));
+
+  document.getElementById("resetBtn").addEventListener("click", () => {
+    state.sport = ""; state.league = ""; state.market = ""; state.minScore = 0; state.search = "";
+    document.querySelectorAll(".sport-chip").forEach(c => c.classList.toggle("active", !c.dataset.sport));
+    slider.value = 0; document.getElementById("scoreValue").textContent = "0";
+    document.getElementById("searchInput").value = "";
+    renderLeagueOptions(); renderMarketChips(); renderPicks();
+  });
+
+  document.getElementById("picksGrid").addEventListener("click", (e) => {
+    const card = e.target.closest(".pick"); if (!card) return;
+    const pid = card.dataset.id;
+    const p = state.picks.find(x => x.id === pid) || state.livePicks.find(x => x.id === pid);
+    if (!p) return;
+    const action = e.target.closest("[data-action]")?.dataset.action;
+    if (action === "argument") openArgumentModal(p);
+    else if (action === "bet") openBetModal(p);
+  });
+
+  document.getElementById("autoEvalBtn").addEventListener("click", async () => {
+    const btn = document.getElementById("autoEvalBtn");
+    const msg = document.getElementById("autoEvalMsg");
+    btn.disabled = true; btn.textContent = "Evaluando…";
+    try {
+      const r = await fetch("/api/tracker/auto-evaluate", { method: "POST" });
+      const j = await r.json();
+      msg.style.display = "block";
+      if (j.evaluated > 0) {
+        msg.style.background = "rgba(34,197,94,.12)"; msg.style.color = "var(--green)";
+        msg.textContent = `Evaluados ${j.evaluated} picks (W:${j.win} · L:${j.loss} · P:${j.push}). ${j.skipped} aún pendientes / sin data.`;
+      } else {
+        msg.style.background = "rgba(234,179,8,.12)"; msg.style.color = "var(--yellow,#eab308)";
+        msg.textContent = `Sin cambios. ${j.skipped} pendientes (eventos aún no terminan o falta info para resolverlos).`;
+      }
+      loadTracker();
+    } catch (err) {
+      msg.style.display = "block";
+      msg.style.background = "rgba(244,63,94,.12)"; msg.style.color = "var(--red)";
+      msg.textContent = "Error al auto-evaluar: " + err.message;
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg> Auto-evaluar pendientes`;
+    }
+  });
+
+  document.getElementById("betsBody").addEventListener("click", async (e) => {
+    const r = e.target.closest("[data-result]");
+    const d = e.target.closest("[data-del]");
+    if (r) {
+      await fetch(`/api/tracker/bets/${r.dataset.bet}`, {
+        method: "PATCH", headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({ result: r.dataset.result })
+      });
+      loadTracker();
+    } else if (d) {
+      if (!confirm("¿Eliminar esta apuesta?")) return;
+      await fetch(`/api/tracker/bets/${d.dataset.del}`, { method:"DELETE" });
+      loadTracker();
+    }
+  });
+
+  document.querySelectorAll("[data-close]").forEach(btn => {
+    btn.addEventListener("click", () => closeModal(btn.dataset.close));
+  });
+  document.querySelectorAll(".modal-overlay").forEach(o => {
+    o.addEventListener("click", (e) => { if (e.target === o) o.classList.remove("open"); });
+  });
+
+  // ──────────────────────────────────────────────────────────────────
+  // Init
+  // ──────────────────────────────────────────────────────────────────
+  renderMarketChips();
+  loadCatalog();
+  loadPicks();
 </script>
 </body>
 </html>

@@ -1,26 +1,7 @@
-import { colombianBookmakerOdds, kellyStakeCOP } from "../model/scoring.js";
+import { colombianBookmakerOdds, kellyStakeCOP, dataQualityFromPick, pickScore, scoreTier, buildMarketNote } from "../model/scoring.js";
+import { humanMarketLabel } from "../config/markets.js";
 
-const MARKET_LABELS = {
-  moneyline: "Ganador del partido",
-  totals: "Totales (Over/Under)",
-  spread: "Spread / Handicap",
-  corners: "Corners",
-  handicap: "Handicap asiático",
-  player_props: "Prop jugador / equipo",
-  combo_same_game: "Combinada mismo partido",
-  btts: "Ambos anotan (BTTS)",
-  cards: "Tarjetas",
-  team_totals: "Total goles por equipo",
-  first_half: "Totales 1.er tiempo / mitad",
-  "3PM": "Triples anotados (NBA)",
-  "carreras equipo": "Carreras del equipo (MLB)",
-  "dobles (bateador)": "Dobles (bateador MLB)",
-  "rbi (bateador)": "RBI (bateador MLB)"
-};
-
-export function humanMarketLabel(market) {
-  return MARKET_LABELS[market] || market;
-}
+export { humanMarketLabel };
 
 export function enrichPick(p) {
   const base = typeof p.odds === "number" ? p.odds : 1.85;
@@ -39,8 +20,32 @@ export function enrichPick(p) {
       ? ((/equipo/i.test(String(statLabel || ""))) || p.teamLabel ? "team" : "player")
       : null),
     bookmakerOdds: colombianBookmakerOdds(base),
-    oddsSource: "referencia_mercado_co",
+    oddsSource: p.oddsSource || "referencia_mercado_co",
     oddsNote: "Cuotas de referencia para operadores en CO; confirma en la casa antes de apostar.",
     stake: kellyStakeCOP(p.modelProb, base)
   };
+}
+
+/**
+ * Aplica el score unificado 0-100 y la etiqueta cualitativa.
+ * Se invoca DESPUES de enrichPick + applyRealOddsToPickList + attachLongArguments,
+ * para que dataQualityFromPick lea las banderas finales.
+ */
+export function attachScores(picks) {
+  for (const p of picks) {
+    const dataQuality = dataQualityFromPick(p);
+    const hasRealOdds = p.oddsSource === "casas_colombia" || p.oddsSource === "the_odds_api";
+    const score = pickScore({
+      modelProb:   p.modelProb,
+      edge:        p.edge,
+      dataQuality,
+      hasRealOdds
+    });
+    const tier = scoreTier(score);
+    p.score          = score;
+    p.scoreLabel     = tier.label;
+    p.scoreTone      = tier.tone;
+    p.dataQuality    = dataQuality;
+    p.marketNote     = buildMarketNote(p);
+  }
 }

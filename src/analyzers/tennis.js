@@ -2,7 +2,23 @@ import { clamp, toNum } from "../utils/math.js";
 import { normalizeTeamName, pickSeed } from "../utils/event.js";
 import { hasSignal } from "../utils/data.js";
 import { oddsFromProbability, confidenceFromProbability, computeEdge, tennisProbFromRanks, bookHalfLine } from "../model/scoring.js";
+import { isMarketEnabled } from "../config/markets.js";
 import { buildMoneylinePick, buildTotalsPick } from "../picks/builders.js";
+
+// Solo aceptamos eventos del tour principal: descartar Challenger e ITF.
+// ESPN expone el tipo de torneo en `event.season.type` (regular, challenger, itf).
+function isMainTour(event) {
+  const tournament = String(
+    event?.tournament?.displayName ||
+    event?.tournament?.name ||
+    event?.season?.displayName ||
+    event?.name ||
+    ""
+  ).toLowerCase();
+  if (!tournament) return true; // sin metadatos asumimos tour principal
+  if (/challenger|itf|futures|qualifying|qualifier/.test(tournament)) return false;
+  return true;
+}
 
 /**
  * Probabilidad Over/Under para total de juegos del partido.
@@ -35,39 +51,15 @@ function thirdSetProb(pFav, rankGap) {
 }
 
 export function analyzeTennisEvent(event, leagueName, dateKey) {
+  // Filtrado de tour principal: descartar Challenger e ITF.
+  if (!isMainTour(event)) return [];
+
   const eventDateUtc = event.date ? new Date(event.date).toISOString() : null;
   const s = pickSeed(dateKey, event, "tenis");
 
-  // Caso sin competitions (solo nombre del cruce)
-  if (!event.competitions?.length) {
-    const rawName = event.shortName || event.name || "Jugador A vs Jugador B";
-    const sep = rawName.includes(" vs ") ? " vs " : " at ";
-    const [p1Name = "Jugador A", p2Name = "Jugador B"] = rawName.split(sep);
-    const eventName = `${p1Name} vs ${p2Name}`;
-    const pFav = 0.54;
-    const oddsMl = oddsFromProbability(pFav);
-    const pGamesOver = 0.52;
-    const gamesLine = 22.5;
-    const oddsGames = oddsFromProbability(pGamesOver);
-    return [
-      buildMoneylinePick({
-        sport: "tenis", league: leagueName, eventName,
-        favorite: p1Name, underdog: p2Name,
-        modelProb: pFav, odds: oddsMl, edge: computeEdge(pFav, oddsMl),
-        confidence: confidenceFromProbability(pFav, 38, 65),
-        argument: "Sin datos de ranking disponibles; leve ventaja al primer jugador listado.",
-        eventDateUtc
-      }),
-      buildTotalsPick({
-        sport: "tenis", league: leagueName, eventName,
-        line: `${gamesLine} juegos`, over: true,
-        modelProb: pGamesOver, odds: oddsGames, edge: computeEdge(pGamesOver, oddsGames),
-        confidence: confidenceFromProbability(pGamesOver, 38, 62),
-        argument: "Total estimado sin datos de ranking; paridad asumida.",
-        eventDateUtc
-      })
-    ];
-  }
+  // Sin competitions ni datos de ranking → no emitimos picks "fabricados".
+  // (Regla global Tarea 3: si no hay datos reales minimos, NO emitir pick.)
+  if (!event.competitions?.length) return [];
 
   const comp = event.competitions?.[0];
   if (!comp?.competitors?.length) return [];
@@ -79,9 +71,13 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const p2Name = normalizeTeamName(p2);
   const eventName = `${p1Name} vs ${p2Name}`;
 
-  // Rankings reales desde ESPN curatedRank
-  const rank1 = toNum(p1.curatedRank?.current, 100);
-  const rank2 = toNum(p2.curatedRank?.current, 100);
+  // Rankings reales desde ESPN curatedRank. Si ninguno tiene dato real,
+  // descartamos el evento (no inventamos picks).
+  const rawR1 = p1.curatedRank?.current;
+  const rawR2 = p2.curatedRank?.current;
+  if (rawR1 == null && rawR2 == null) return [];
+  const rank1 = toNum(rawR1, 100);
+  const rank2 = toNum(rawR2, 100);
   const rankGap = Math.abs(rank1 - rank2);
 
   // Scores de sets actuales (si el partido está en curso)
@@ -110,7 +106,9 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const picks = [];
 
   // ── Moneyline ────────────────────────────────────────────────────────────
-  picks.push(buildMoneylinePick({
+  if (!isMarketEnabled("tenis", "moneyline")) {
+    /* skip */
+  } else picks.push(buildMoneylinePick({
     sport: "tenis", league: leagueName, eventName,
     favorite, underdog,
     modelProb: pFav, odds: oddsMl, edge: computeEdge(pFav, oddsMl),
@@ -120,7 +118,9 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   }));
 
   // ── Total de juegos (línea dinámica) ─────────────────────────────────────
-  picks.push(buildTotalsPick({
+  if (!isMarketEnabled("tenis", "totals")) {
+    /* skip */
+  } else picks.push(buildTotalsPick({
     sport: "tenis", league: leagueName, eventName,
     line: `${gamesLine} juegos`, over: pickGamesOver,
     modelProb: gamesProb, odds: oddsGames, edge: computeEdge(gamesProb, oddsGames),
@@ -134,7 +134,7 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const pickOver25Sets = p3Sets >= 0.5;
   const setsProb = pickOver25Sets ? p3Sets : 1 - p3Sets;
   const oddsSets = oddsFromProbability(setsProb);
-  if (rankGap > 0) {
+  if (isMarketEnabled("tenis", "totals") && rankGap > 0) {
     picks.push({
       sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
       market: "totals", marketLabel: "Total de sets",
@@ -153,7 +153,7 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const pickS1Over = pSet1Over >= 0.5;
   const s1Prob = pickS1Over ? pSet1Over : 1 - pSet1Over;
   const oddsS1 = oddsFromProbability(s1Prob);
-  if (rank1 !== 100 || rank2 !== 100) {
+  if (isMarketEnabled("tenis", "totals") && (rank1 !== 100 || rank2 !== 100)) {
     picks.push({
       sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
       market: "totals", marketLabel: "Juegos en el 1er set",
@@ -170,7 +170,7 @@ export function analyzeTennisEvent(event, leagueName, dateKey) {
   const pickTbYes = pTiebreak >= 0.5;
   const tbProb = pickTbYes ? pTiebreak : 1 - pTiebreak;
   const oddsTb = oddsFromProbability(tbProb);
-  if (rankGap < 60 && hasSignal(pTiebreak, 0.05)) {
+  if (isMarketEnabled("tenis", "player_props") && rankGap < 60 && hasSignal(pTiebreak, 0.05)) {
     picks.push({
       sport: "tenis", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
       market: "player_props", marketLabel: "Tie-break en el partido",

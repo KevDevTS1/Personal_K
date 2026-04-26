@@ -34,3 +34,13 @@ temp/
 Thumbs.db
 .idea/
 .vscode/
+nul
+
+# Cache y datos de runtime (cada deploy genera su propia caché; no contiene código)
+data/arguments/
+data/sportsdb/
+data/footballdata/
+data/clubelo/
+data/sofascore/
+data/bets.json
+data/*.log

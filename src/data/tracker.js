@@ -106,13 +106,14 @@ export function computeStats(bets = null) {
     (byMarket[key] = byMarket[key] || []).push(b);
   }
 
-  // Group by confidence tier
-  const byConf = { "alto (≥75%)": [], "medio (65-74%)": [], "bajo (<65%)": [] };
+  // Group by score tier (Pick élite / fuerte / razonable / especulativo)
+  const byScore = { "élite (80+)": [], "fuerte (65-79)": [], "razonable (50-64)": [], "especulativo (<50)": [] };
   for (const b of all) {
-    const c = Number(b.modelConfidence || 0);
-    if (c >= 75) byConf["alto (≥75%)"].push(b);
-    else if (c >= 65) byConf["medio (65-74%)"].push(b);
-    else byConf["bajo (<65%)"].push(b);
+    const s = Number(b.score ?? b.modelConfidence ?? 0);
+    if (s >= 80) byScore["élite (80+)"].push(b);
+    else if (s >= 65) byScore["fuerte (65-79)"].push(b);
+    else if (s >= 50) byScore["razonable (50-64)"].push(b);
+    else byScore["especulativo (<50)"].push(b);
   }
 
   // Rolling windows
@@ -126,6 +127,6 @@ export function computeStats(bets = null) {
     last30d:   statsFor(last30),
     bySport:   Object.fromEntries(Object.entries(bySport).map(([k,v])  => [k,  statsFor(v)])),
     byMarket:  Object.fromEntries(Object.entries(byMarket).map(([k,v]) => [k,  statsFor(v)])),
-    byConf:    Object.fromEntries(Object.entries(byConf).map(([k,v])   => [k,  statsFor(v)])),
+    byScore:   Object.fromEntries(Object.entries(byScore).map(([k,v])  => [k,  statsFor(v)])),
   };
 }

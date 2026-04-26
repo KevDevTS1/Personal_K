@@ -1,10 +1,11 @@
 import { clamp, toNum } from "../utils/math.js";
 import { normalizeTeamName, pickSeed } from "../utils/event.js";
 import { gamesFromRecord, hasSignal } from "../utils/data.js";
-import { soccerRecordStrength, findEspnLeaderSide, parseNbaTeamSeasonStatsFromBoxscore } from "../data/espn.js";
+import { soccerRecordStrength, parseNbaTeamSeasonStatsFromBoxscore } from "../data/espn.js";
 import { extractNbaPlayers, defenseAdjustment, paceMultiplier, rankPlayers } from "../data/nba.js";
 import { estimatePropProbabilities } from "../model/props.js";
 import { oddsFromProbability, confidenceFromProbability, confidenceFromCombo, computeEdge, bookHalfLine, winProbFromRecords } from "../model/scoring.js";
+import { isMarketEnabled } from "../config/markets.js";
 import { buildMoneylinePick, buildTotalsPick, buildPropPick } from "../picks/builders.js";
 
 function pp(prob, odds) { return { modelProb: prob, odds, edge: computeEdge(prob, odds) }; }
@@ -70,7 +71,7 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
   const picks = [];
   const legPool = []; // para combinadas
 
-  if (Math.abs(pFavNba - 0.5) >= 0.05) {
+  if (isMarketEnabled("baloncesto", "moneyline") && Math.abs(pFavNba - 0.5) >= 0.05) {
     const oddsMl = oddsFromProbability(pFavNba);
     picks.push(buildMoneylinePick({
       sport: "baloncesto", league: leagueName, eventName,
@@ -83,7 +84,7 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
   }
 
   // ── Spread ─────────────────────────────────────────────────────────────────
-  if (hasRecords && hasSignal(pFavNba, 0.07)) {
+  if (isMarketEnabled("baloncesto", "spread") && hasRecords && hasSignal(pFavNba, 0.07)) {
     const spreadEst  = clamp((pFavNba - 0.5) * 22, 0.5, 14.5);
     const spreadLine = bookHalfLine(spreadEst);
     const pSpread    = clamp(pFavNba - 0.04, 0.30, 0.78);
@@ -101,7 +102,7 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
   }
 
   // ── Total del partido ──────────────────────────────────────────────────────
-  if (sumPpg > 180) {
+  if (isMarketEnabled("baloncesto", "totals") && sumPpg > 180) {
     const lineGameTot = parseFloat(bookHalfLine(sumPpg));
     const pace = paceMultiplier(sumPpg);
     const projTot = sumPpg * pace;
@@ -121,8 +122,41 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
     }
   }
 
+  // ── Total por equipo (team total) ─────────────────────────────────────────
+  // Pedido por el usuario: puntos totales por equipo.
+  if (isMarketEnabled("baloncesto", "team_totals")) {
+    for (const side of [{ team: home, name: homeName, ppg: homeSeason.avgPoints, isHome: true },
+                        { team: away, name: awayName, ppg: awaySeason.avgPoints, isHome: false }]) {
+      if (!Number.isFinite(side.ppg) || side.ppg <= 0) continue;
+      const oppWR = side.isHome ? aWR : hWR;
+      const defAdj = defenseAdjustment(oppWR);
+      const proj = clamp(side.ppg * defAdj * paceMultiplier(sumPpg), 65, 145);
+      const lineTeam = parseFloat(bookHalfLine(side.ppg));
+      const teamRes = estimatePropProbabilities({
+        mean: proj, line: lineTeam,
+        sport: "baloncesto", stat: "puntos del equipo", leagueSlug, calibrationStore
+      });
+      const overTeam = teamRes.pOver >= teamRes.pUnder;
+      const teamProb = overTeam ? teamRes.pOver : teamRes.pUnder;
+      if (!hasSignal(teamProb, 0.06)) continue;
+      const oddsTeam = oddsFromProbability(teamProb);
+      picks.push({
+        sport: "baloncesto", league: leagueName, event: eventName, eventDateUtc, sourceDateKey: null,
+        market: "team_totals", marketLabel: "Puntos por equipo",
+        lineLabel: String(lineTeam), sideLabel: overTeam ? "Más de" : "Menos de",
+        teamLabel: side.name,
+        selection: `${side.name} ${overTeam ? "más de" : "menos de"} ${lineTeam} puntos`,
+        ...pp(teamProb, oddsTeam),
+        confidence: confidenceFromProbability(teamProb, 42, 86),
+        argument: `${side.name} promedia ${side.ppg.toFixed(1)} pts/partido; ajustado por defensa rival y ritmo → proyección ${proj.toFixed(1)} vs línea ${lineTeam}.`
+      });
+      legPool.push({ prob: teamProb, odds: oddsTeam, short: `${side.name} ${overTeam ? "O" : "U"} ${lineTeam} pts equipo` });
+    }
+  }
+
   // ── PLAYER PROPS ──────────────────────────────────────────────────────────
   if (!summary) return picks;
+  if (!isMarketEnabled("baloncesto", "player_props")) return picks;
 
   const playerMap = extractNbaPlayers(summary);
   const allPlayers = rankPlayers(playerMap);
@@ -236,36 +270,8 @@ export function analyzeBasketballEvent(event, leagueName, leagueSlug, dateKey, s
     }
   }
 
-  // ── Asistencias del equipo favorito ────────────────────────────────────────
-  const favSide = summary && (pHomeWin >= 0.5 ? home.team?.id : away.team?.id)
-    ? findEspnLeaderSide(summary, pHomeWin >= 0.5 ? home.team?.id : away.team?.id)
-    : null;
-  const favSeason = summary ? parseNbaTeamSeasonStatsFromBoxscore(summary, pHomeWin >= 0.5 ? home.team?.id : away.team?.id) : {};
-  const teamAstAvg = favSeason.avgAssists;
-  if (Number.isFinite(teamAstAvg) && teamAstAvg > 0) {
-    const lineTeamAst = bookHalfLine(teamAstAvg);
-    const tAstRes = estimatePropProbabilities({
-      mean: teamAstAvg, line: parseFloat(lineTeamAst),
-      sport: "baloncesto", stat: "asistencias del equipo", leagueSlug, calibrationStore
-    });
-    const pickTAstOver = tAstRes.pOver >= tAstRes.pUnder;
-    const tAstProb = pickTAstOver ? tAstRes.pOver : tAstRes.pUnder;
-    const oddsTa = oddsFromProbability(tAstProb);
-    if (hasSignal(tAstProb, 0.06)) {
-      picks.push(buildPropPick({
-        sport: "baloncesto", league: leagueName, eventName, player: favorite,
-        propType: "team", teamLabel: favorite, stat: "asistencias del equipo",
-        line: lineTeamAst, over: pickTAstOver,
-        ...pp(tAstProb, oddsTa),
-        confidence: confidenceFromProbability(tAstProb, 40, 86),
-        argument: `${favorite} promedia ${teamAstAvg.toFixed(1)} asistencias de equipo/partido (ESPN).`,
-        eventDateUtc,
-      }));
-      legPool.push({ prob: tAstProb, odds: oddsTa, short: `${favorite} asistencias equipo ${pickTAstOver ? "O" : "U"} ${lineTeamAst}` });
-    }
-  }
-
   // ── Combinadas SGP (x2 y x3) ──────────────────────────────────────────────
+  if (!isMarketEnabled("baloncesto", "combo_same_game")) return picks;
   const strongLegs = legPool
     .filter(l => Math.abs(l.prob - 0.5) >= 0.08)
     .sort((a, b) => Math.max(b.prob, 1-b.prob) - Math.max(a.prob, 1-a.prob));
