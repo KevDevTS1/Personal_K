@@ -1,0 +1,3 @@
+# Fuerza Node 20+ en Railway / Nixpacks (undici 7 + cheerio requieren el global `File`)
+[variables]
+NIXPACKS_NODE_VERSION = "20"

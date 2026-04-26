@@ -25,7 +25,10 @@
 4. **Puerto**
    - Por defecto `8787`. En producción suele mapearse con `PORT` (Heroku, Railway, etc.).
 
-5. **Proceso en segundo plano (ej. PM2)**
+5. **Railway (Node)**  
+   Debe usarse **Node 20+** (el proyecto incluye `nixpacks.toml` y `engines` en `package.json`). Si el build sigue en Node 18, añade en **Variables** del servicio: `NIXPACKS_NODE_VERSION=20` o `NODE_VERSION=20` y vuelve a desplegar.
+
+6. **Proceso en segundo plano (ej. PM2)**
    ```bash
    npm install -g pm2
    pm2 start server.js --name infobet
@@ -33,6 +36,6 @@
    pm2 startup
    ```
 
-6. **Caché en disco** (`data/`) se crea sola; no hace falta commitearla. El repositorio ignora caché y `data/bets.json` del tracker.
+7. **Caché en disco** (`data/`) se crea sola; no hace falta commitearla. El repositorio ignora caché y `data/bets.json` del tracker.
 
-7. Tras cada deploy: `git pull && npm install && pm2 restart infobet` (o el nombre que uses).
+8. Tras cada deploy: `git pull && npm install && pm2 restart infobet` (o el nombre que uses).
