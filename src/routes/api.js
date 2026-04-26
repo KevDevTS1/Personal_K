@@ -4,6 +4,7 @@ import { BOGOTA_TZ, SOCCER_LEAGUES, SOCCER_LEAGUE_LABELS, BASKET_LEAGUES, BASKET
 import { createPicksFromEvents } from "../picks/collector.js";
 import { getCachedFeeds } from "../cache/feeds.js";
 import { isGroqAvailable } from "../data/llm.js";
+import { getSofascoreHealth } from "../data/sofascore.js";
 
 const router = Router();
 
@@ -87,12 +88,7 @@ function buildFeedHealth(feeds, picks) {
       status: "ok",
       requiresKey: false
     },
-    sofascore: {
-      label: "SofaScore (alineaciones + ratings)",
-      detail: "Configurado · API web pública pero suele bloquearse desde IP de servidor (Cloudflare 403). Si quieres alineaciones reales considera api-football.com con key dedicada.",
-      status: "warn",
-      requiresKey: false
-    },
+    sofascore: getSofascoreHealth(),
     clubelo: {
       label: "ClubElo (rating ELO oficial)",
       detail: "Activo · sin auth · rating ELO histórico de clubes europeos para baseline de moneyline en futbol",

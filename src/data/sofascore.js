@@ -17,10 +17,72 @@ const BASE = "https://api.sofascore.com/api/v1";
 const CACHE_DIR = path.join(process.cwd(), "data", "sofascore");
 const CACHE_TTL = 6 * 60 * 60 * 1000;
 const _mem = new Map();
-let _backoffUntil = 0;
-let _consecutiveFails = 0;
+/** Primer 403/429 → Cloudflare bloquea IP de datacenter: no reintentar en este proceso */
+let _blockedByWaf = false;
+let _blocked403Logged = false;
+let _paaSOffLogged = false;
 
 function now() { return Date.now(); }
+
+/** PaaS típicos: la API pública de SofaScore suele devolver 403 a IPs de datacenter. */
+function isLikelyCloudHost() {
+  return Boolean(
+    process.env.RAILWAY_ENVIRONMENT ||
+    process.env.VERCEL ||
+    process.env.FLY_APP_NAME ||
+    process.env.RENDER ||
+    process.env.HEROKU_APP_NAME ||
+    (process.env.K_SERVICE && process.env.GOOGLE_CLOUD_PROJECT)
+  );
+}
+
+/**
+ * SOFASCORE_ENABLED:
+ *   true  → forzar (útil con proxy residencial o si probaste que funciona)
+ *   false → apagar por completo
+ *   (vacío) → en Railway/Vercel/Render, etc. apagado por defecto; en local, encendido
+ */
+export function isSofascoreEnabled() {
+  const v = String(process.env.SOFASCORE_ENABLED || "").toLowerCase();
+  if (v === "true") return true;
+  if (v === "false") return false;
+  return !isLikelyCloudHost();
+}
+
+/** Para el panel "Fuentes activas" */
+export function getSofascoreHealth() {
+  if (!isSofascoreEnabled()) {
+    const ex = String(process.env.SOFASCORE_ENABLED || "").toLowerCase();
+    let why;
+    if (ex === "false") {
+      why = "Desactivada (SOFASCORE_ENABLED=false).";
+    } else if (isLikelyCloudHost()) {
+      why = "Off por defecto en hosting (Railway, Vercel, etc.): la API devuelve 403 a IPs de datacenter. ClubElo + football-data + ESPN sustituyen la señal. Forzar intentos: SOFASCORE_ENABLED=true (solo con salida no bloqueada).";
+    } else {
+      why = "Desactivada.";
+    }
+    return {
+      label: "SofaScore (alineaciones + ratings)",
+      detail: why,
+      status: "off",
+      requiresKey: false
+    };
+  }
+  if (_blockedByWaf) {
+    return {
+      label: "SofaScore (alineaciones + ratings)",
+      detail: "Bloqueada en este despliegue: API respondió 403/429 (WAF/Cloudflare). Próximos ciclos ya no reintentan.",
+      status: "error",
+      requiresKey: false
+    };
+  }
+  return {
+    label: "SofaScore (alineaciones + ratings)",
+    detail: "Activa · top 25 partidos · caché 6h (si la IP no es bloqueada).",
+    status: "ok",
+    requiresKey: false
+  };
+}
 
 function cleanFilename(s) {
   return String(s).replace(/[^\w]+/g, "_").slice(0, 80);
@@ -47,14 +109,13 @@ async function writeDisk(label, value) {
 }
 
 async function fetchJson(url) {
-  if (now() < _backoffUntil) return null;
+  if (!isSofascoreEnabled() || _blockedByWaf) return null;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), 7000);
   try {
     const r = await fetch(url, {
       signal: ctrl.signal,
       headers: {
-        // Headers que imitan navegador real para evitar bloqueo Cloudflare.
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
         "Accept": "*/*",
         "Accept-Language": "en-US,en;q=0.9,es;q=0.8",
@@ -69,13 +130,19 @@ async function fetchJson(url) {
       }
     });
     if (r.status === 429 || r.status === 403) {
-      _consecutiveFails++;
-      _backoffUntil = now() + Math.min(300, 30 * _consecutiveFails) * 1000;
-      console.warn(`[sofascore] rate limit / bloqueo (${r.status}), backing off ${Math.round((_backoffUntil - now()) / 1000)}s`);
+      if (!_blockedByWaf) {
+        _blockedByWaf = true;
+        if (!_blocked403Logged) {
+          _blocked403Logged = true;
+          console.warn(
+            `[sofascore] WAF/Cloudflare ${r.status} (IP de servidor → bloqueo). Desactivada para este proceso. ` +
+              "En PaaS deja SOFASCORE_ENABLED sin poner a true, o no reintentar. Alineaciones: prueba API-Football (RAPIDAPI) con límite de cuota."
+          );
+        }
+      }
       return null;
     }
     if (!r.ok) return null;
-    _consecutiveFails = 0;
     return await r.json();
   } catch {
     return null;
@@ -178,6 +245,7 @@ export async function getLineups(eventId) {
 // ───── Enrich picks ─────────────────────────────────────────────────────
 
 export async function enrichPickWithSofascore(pick) {
+  if (!isSofascoreEnabled() || _blockedByWaf) return pick;
   if (pick.sport !== "futbol") return pick;
   if (!pick.homeTeam || !pick.awayTeam) return pick;
   const dk = pick.sourceDateKey || pick.forDate || null;
@@ -198,6 +266,15 @@ export async function enrichPickWithSofascore(pick) {
  * Trabaja en serie con un pequeño delay.
  */
 export async function enrichPicksWithSofascore(picks, maxEvents = 25) {
+  if (!isSofascoreEnabled()) {
+    if (isLikelyCloudHost() && !_paaSOffLogged) {
+      _paaSOffLogged = true;
+      console.log("[sofascore] off en hosting (default): API bloquea IPs de datacenter. Sin solicitudes. ClubElo + football-data + ESPN sustituyen señal.");
+    }
+    return;
+  }
+  if (_blockedByWaf) return;
+
   const candidates = picks
     .filter(p => p.sport === "futbol" && p.homeTeam && p.awayTeam)
     .sort((a, b) => Math.max(b.modelProb, 1-b.modelProb) - Math.max(a.modelProb, 1-a.modelProb));
@@ -214,7 +291,7 @@ export async function enrichPicksWithSofascore(picks, maxEvents = 25) {
 
   let enriched = 0;
   for (const plist of groups) {
-    if (now() < _backoffUntil) break;
+    if (_blockedByWaf) break;
     try {
       await enrichPickWithSofascore(plist[0]);
       if (plist[0].hasSofascore) {
@@ -225,7 +302,6 @@ export async function enrichPicksWithSofascore(picks, maxEvents = 25) {
           plist[k].hasSofascore     = true;
         }
       }
-      // pequeño delay entre eventos (1.5s)
       await new Promise(res => setTimeout(res, 1500));
     } catch { /* ignore */ }
   }
