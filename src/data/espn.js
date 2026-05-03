@@ -67,6 +67,39 @@ export function getEspnCategoryLeader(sideBlock, categoryName) {
   };
 }
 
+/**
+ * Goles a favor por partido del equipo si el summary trae boxscore de temporada
+ * (soccer). Distintas ligas usan nombres distintos en statistics[].
+ */
+export function parseSoccerTeamGoalsPerGameFromBoxscore(summary, teamId) {
+  if (teamId == null) return null;
+  const row = summary?.boxscore?.teams?.find(
+    (t) => String(t.team?.id) === String(teamId)
+  );
+  if (!row?.statistics?.length) return null;
+  const map = {};
+  for (const s of row.statistics) {
+    const raw = s.displayValue ?? s.value;
+    const v = parseFloat(String(raw ?? "").replace(/[^0-9.]/g, ""));
+    if (Number.isFinite(v)) map[s.name] = v;
+  }
+  const gp =
+    map.gamesPlayed ||
+    map.matchesPlayed ||
+    map.games ||
+    map.mp ||
+    map.matches ||
+    null;
+  const gf =
+    map.goalsFor ||
+    map.goalsScored ||
+    map.goals ||
+    map.totalGoals ||
+    null;
+  if (Number.isFinite(gp) && gp > 0 && Number.isFinite(gf) && gf >= 0) return gf / gp;
+  return null;
+}
+
 export function parseNbaTeamSeasonStatsFromBoxscore(summary, teamId) {
   const row = summary?.boxscore?.teams?.find((t) => t.team?.id === teamId);
   const out = {};

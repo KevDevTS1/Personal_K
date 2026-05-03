@@ -3,6 +3,7 @@ import { normalizeTeamName } from "../utils/event.js";
 import { gamesFromRecord, hasSignal } from "../utils/data.js";
 import {
   findEspnLeaderSide,
+  parseSoccerTeamGoalsPerGameFromBoxscore,
   soccerLeaderGoalsPer90, soccerLeaderAssistsPer90, soccerLeaderShotsPer90,
   soccerRecordStrength
 } from "../data/espn.js";
@@ -20,7 +21,10 @@ const RELIABLE_LEAGUES = new Set([
   "esp.1", "eng.1", "ger.1", "ita.1", "fra.1", "por.1"
 ]);
 
-export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, calibrationStore = null, leagueSlug = "esp.1") {
+export function analyzeSoccerEvent(
+  event, leagueName, dateKey, summary = null, calibrationStore = null, leagueSlug = "esp.1",
+  externalHint = null
+) {
   const comp = event.competitions?.[0];
   if (!comp?.competitors?.length) return [];
   const home = comp.competitors.find((c) => c.homeAway === "home");
@@ -50,18 +54,29 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
   const pFavWin = clamp(Math.max(pHomeWin, 1 - pHomeWin), 0.35, 0.88);
   const favComp = pHomeWin >= 0.5 ? home : away;
   const favTeamId = favComp?.team?.id;
+  let favSide = summary && favTeamId ? findEspnLeaderSide(summary, favTeamId) : null;
 
-  // Scoring rate real desde ESPN summary
-  let homeScoringRate = null;
-  let awayScoringRate = null;
-  let favSide = null;
+  const homeId = home.team?.id;
+  const awayId = away.team?.id;
 
-  if (summary && favTeamId) {
-    favSide = findEspnLeaderSide(summary, favTeamId);
+  let homeGpg = parseSoccerTeamGoalsPerGameFromBoxscore(summary, homeId);
+  let awayGpg = parseSoccerTeamGoalsPerGameFromBoxscore(summary, awayId);
+
+  let projectedGoals = null;
+  const goalsMeta = { sources: [] };
+
+  if (Number.isFinite(homeGpg) && Number.isFinite(awayGpg)) {
+    projectedGoals = clamp(homeGpg + awayGpg, 0.8, 6.0);
+    goalsMeta.sources.push("ESPN boxscore (GF/partido)");
+  }
+
+  if (projectedGoals == null && favSide) {
     const goalsCat = favSide?.leaders?.find(c => c.name === "goalsLeaders");
     const gRow = goalsCat?.leaders?.[0];
     const gpg = soccerLeaderGoalsPer90(gRow);
     if (Number.isFinite(gpg) && gpg > 0) {
+      let homeScoringRate;
+      let awayScoringRate;
       if (pHomeWin >= 0.5) {
         homeScoringRate = gpg;
         awayScoringRate = gpg * (aStr / Math.max(hStr, 0.01)) * 0.85;
@@ -69,13 +84,58 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
         awayScoringRate = gpg;
         homeScoringRate = gpg * (hStr / Math.max(aStr, 0.01)) * 0.85;
       }
+      projectedGoals = clamp(homeScoringRate + awayScoringRate, 0.8, 6.0);
+      goalsMeta.sources.push("ESPN líder estrella (goles/90)");
     }
   }
 
-  const hasRealGoalData = homeScoringRate != null && awayScoringRate != null;
-  const projectedGoals  = hasRealGoalData
-    ? clamp(homeScoringRate + awayScoringRate, 0.8, 6.0)
-    : null;
+  if (externalHint?.understat?.home && externalHint?.understat?.away) {
+    const uh = externalHint.understat.home;
+    const ua = externalHint.understat.away;
+    const xTot = uh.xgPerGame + ua.xgPerGame;
+    const sTot = uh.scoredPerGame + ua.scoredPerGame;
+    const blend = clamp(0.52 * xTot + 0.48 * sTot, 0.85, 5.2);
+    if (projectedGoals == null || !Number.isFinite(projectedGoals)) {
+      projectedGoals = blend;
+      goalsMeta.sources.length = 0;
+      goalsMeta.sources.push("Understat (últimos partidos xG+goles)");
+    } else {
+      projectedGoals = clamp(0.42 * projectedGoals + 0.58 * blend, 0.8, 5.5);
+      if (!goalsMeta.sources.some(s => s.includes("Understat"))) {
+        goalsMeta.sources.push("Understat (xG+goles)");
+      }
+    }
+  }
+
+  if (externalHint?.apiFoot?.home && externalHint?.apiFoot?.away) {
+    const h = externalHint.apiFoot.home;
+    const a = externalHint.apiFoot.away;
+    let apiTot = null;
+    if (h.goalsForAvg > 0 && a.goalsForAvg > 0) {
+      apiTot = h.goalsForAvg + a.goalsForAvg;
+    } else if (h.played > 0 && a.played > 0) {
+      apiTot = h.goalsFor / h.played + a.goalsFor / a.played;
+    }
+    if (apiTot != null && Number.isFinite(apiTot)) {
+      apiTot = clamp(apiTot, 0.5, 6.0);
+      if (projectedGoals == null || !Number.isFinite(projectedGoals)) {
+        projectedGoals = apiTot;
+        goalsMeta.sources.length = 0;
+        goalsMeta.sources.push("API-Football (GF/partido temporada)");
+      } else {
+        const apiWeight = goalsMeta.sources.some(s => s.includes("Understat")) ? 0.35 : 0.5;
+        projectedGoals = clamp((1 - apiWeight) * projectedGoals + apiWeight * apiTot, 0.8, 5.5);
+        if (!goalsMeta.sources.some(s => s.includes("API-Football"))) {
+          goalsMeta.sources.push("API-Football");
+        }
+      }
+    }
+  }
+
+  const hasRealGoalData = projectedGoals != null && Number.isFinite(projectedGoals);
+  const projFlags = {};
+  if (goalsMeta.sources.some(s => s.includes("Understat"))) projFlags.hasUnderstat = true;
+  if (goalsMeta.sources.some(s => s.includes("API-Football"))) projFlags.hasApiFootball = true;
 
   const picks = [];
   const legPool = [];
@@ -128,7 +188,7 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
 
   // ── Over/Under goles — SOLO con datos reales de scoring ───────────────────
   if (isMarketEnabled("futbol", "totals") && hasRealGoalData && hasRecords) {
-    const lineGNum = projectedGoals >= 3.2 ? 3.5 : 2.5;
+    const lineGNum = Math.max(1.5, parseFloat(bookHalfLine(projectedGoals)));
     const totRes = estimatePropProbabilities({
       mean: projectedGoals, line: lineGNum,
       sport: "futbol", stat: "goles partido", leagueSlug, calibrationStore
@@ -137,14 +197,17 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
     const goalsProb = pickGoalsOver ? totRes.pOver : totRes.pUnder;
     const oddsTot = oddsFromProbability(goalsProb);
     if (hasSignal(goalsProb, 0.08) && (isReliableLeague || hasRealGoalData)) {
-      picks.push(buildTotalsPick({
-        sport: "futbol", league: leagueName, eventName,
-        line: `${lineGNum} goles`, over: pickGoalsOver,
-        ...pick(goalsProb, oddsTot),
-        confidence: confidenceFromProbability(goalsProb, 42, 86),
-        argument: `Goles esperados ~${projectedGoals.toFixed(2)} (tasa ESPN ${homeName}+${awayName}). Linea ${lineGNum}.`,
-        eventDateUtc
-      }));
+      picks.push({
+        ...buildTotalsPick({
+          sport: "futbol", league: leagueName, eventName,
+          line: `${lineGNum} goles`, over: pickGoalsOver,
+          ...pick(goalsProb, oddsTot),
+          confidence: confidenceFromProbability(goalsProb, 42, 86),
+          argument: `Goles esperados ~${projectedGoals.toFixed(2)} (${goalsMeta.sources.join(" + ")}). Línea ${lineGNum} (modelo dinámico, no fija 2.5/3.5).`,
+          eventDateUtc
+        }),
+        ...projFlags
+      });
       legPool.push({ prob: goalsProb, odds: oddsTot, short: `${pickGoalsOver ? "más de" : "menos de"} ${lineGNum} goles` });
     }
   }
@@ -168,7 +231,8 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
         selection: `${pickCornOver ? "Más de" : "Menos de"} ${lineCn} tiros de esquina`,
         ...pick(cornProb, oddsCo),
         confidence: confidenceFromProbability(cornProb, 42, 86),
-        argument: `Media corners estimada ~${baseCorners.toFixed(1)} (xG implícito + ritmo ofensivo).`
+        argument: `Media corners estimada ~${baseCorners.toFixed(1)} (ritmo ofensivo; goles ~${projectedGoals.toFixed(2)}).`,
+        ...projFlags
       });
       legPool.push({ prob: cornProb, odds: oddsCo, short: `${pickCornOver ? "más de" : "menos de"} ${lineCn} tiros de esquina` });
     }
@@ -197,7 +261,7 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
   if (isMarketEnabled("futbol", "cards") && hasRecords && isReliableLeague) {
     const formGap = Math.abs(hStr - aStr);
     const meanCards = clamp(3.8 + formGap * 2.2, 2.5, 7.5);
-    const lineCard = 4.5;
+    const lineCard = Math.max(2.5, parseFloat(bookHalfLine(meanCards)));
     const cardRes = estimatePropProbabilities({
       mean: meanCards, line: lineCard,
       sport: "futbol", stat: "tarjetas amarillas partido", leagueSlug, calibrationStore
@@ -213,7 +277,8 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
         selection: `${pickCardOver ? "Más de" : "Menos de"} ${lineCard} tarjetas amarillas`,
         ...pick(cardProb, oddsCa),
         confidence: confidenceFromProbability(cardProb, 40, 86),
-        argument: `Disciplina estimada ~${meanCards.toFixed(1)} tarjetas (brecha de forma ${(formGap*100).toFixed(0)}%).`
+        argument: `Disciplina estimada ~${meanCards.toFixed(1)} tarjetas (línea ${lineCard}; brecha de forma ${(formGap*100).toFixed(0)}%).`,
+        ...projFlags
       });
       legPool.push({ prob: cardProb, odds: oddsCa, short: `${pickCardOver ? "más de" : "menos de"} ${lineCard} tarjetas` });
     }
@@ -305,7 +370,10 @@ export function analyzeSoccerEvent(event, leagueName, dateKey, summary = null, c
         odds: oddsCombo, confidence: confidenceFromCombo(x0.prob, x1.prob),
         modelProb: Math.min(x0.prob, x1.prob),
         edge: computeEdge(Math.min(x0.prob, x1.prob), oddsCombo),
-        argument: "Dos mercados con señal fuerte (≥8% sobre 50/50) + datos ESPN reales."
+        argument: goalsMeta.sources.length
+          ? `Dos mercados con señal fuerte; contexto de goles: ${goalsMeta.sources.join(", ")}.`
+          : "Dos mercados con señal fuerte (≥8% sobre 50/50) + datos ESPN reales.",
+        ...projFlags
       });
     }
   }

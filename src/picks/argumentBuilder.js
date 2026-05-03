@@ -136,7 +136,8 @@ ${dataSummary}`;
 // Plantilla fallback (sin Groq)
 // ──────────────────────────────────────────────────────────────────────────
 
-function fallbackTemplate(pick) {
+/** Plantilla larga sin Groq (también para picks fuera del cupo de IA). */
+export function getArgumentFallbackText(pick) {
   const m = pick.modelProb != null ? (pick.modelProb * 100).toFixed(1) + "%" : "n/d";
   const e = pick.edge != null ? (pick.edge * 100).toFixed(2) + "%" : "n/d";
   const ev = pick.eventDateUtc ? new Date(pick.eventDateUtc).toLocaleString("es-CO", { timeZone: "America/Bogota" }) : "fecha por confirmar";
@@ -198,7 +199,7 @@ export async function buildOrGetArgument(pick) {
     }
   }
 
-  const text = fallbackTemplate(pick);
+  const text = getArgumentFallbackText(pick);
   const payload = {
     text,
     model: "fallback-template",

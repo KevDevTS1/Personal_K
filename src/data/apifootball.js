@@ -2,12 +2,122 @@
 // ligas no europeas que ESPN cubre con menos detalle (MLS, Liga MX, Liga
 // Argentina, Liga Colombiana, copas regionales).
 //
-// Free tier: 100 requests/dia. Requiere RAPIDAPI key.
+// Free tier: ~100 requests/dia (RapidAPI). Control local con
+// API_FOOTBALL_MAX_REQUESTS_PER_DAY + persistencia en disco.
 // https://www.api-football.com/
+
+import fs from "fs";
+import path from "path";
 
 const RAPIDAPI_HOST = "v3.football.api-sports.io";
 const API_KEY = process.env.API_FOOTBALL_KEY || process.env.RAPIDAPI_KEY || "";
 const TTL_MS = 30 * 60 * 1000;
+
+/** Tope por defecto ligeramente bajo 100 para margen frente a otros clientes. */
+const DEFAULT_DAILY_CAP = 90;
+/**
+ * Antes de pedir local+visitante reservamos este mínimo (peor caso: 2× /teams search
+ * + 2× /teams/statistics). Ajustable con env.
+ */
+const DEFAULT_RESERVE_PER_MATCH = 4;
+
+const STATE_FILE = process.env.API_FOOTBALL_QUOTA_FILE
+  || path.join(process.cwd(), "data", ".api-football-quota.json");
+
+let _quota = { dayUtc: "", used: 0 };
+let _quotaFileRead = false;
+let _warnedQuotaExhausted = false;
+
+function utcDayKey() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function dailyCap() {
+  const n = Number(process.env.API_FOOTBALL_MAX_REQUESTS_PER_DAY);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : DEFAULT_DAILY_CAP;
+}
+
+function reservePerMatch() {
+  const n = Number(process.env.API_FOOTBALL_RESERVE_REQUESTS_PER_MATCH);
+  return Number.isFinite(n) && n >= 1 ? Math.floor(n) : DEFAULT_RESERVE_PER_MATCH;
+}
+
+function readQuotaFileOnce() {
+  if (_quotaFileRead) return;
+  _quotaFileRead = true;
+  try {
+    const raw = fs.readFileSync(STATE_FILE, "utf8");
+    const j = JSON.parse(raw);
+    if (j && typeof j.dayUtc === "string" && typeof j.used === "number") {
+      _quota = { dayUtc: j.dayUtc, used: j.used };
+    }
+  } catch {
+    // sin archivo o JSON inválido
+  }
+}
+
+function warnApiFootball(msg) {
+  console.warn(`[API-Football] ${msg}`);
+}
+
+function persistQuota() {
+  try {
+    fs.mkdirSync(path.dirname(STATE_FILE), { recursive: true });
+    fs.writeFileSync(
+      STATE_FILE,
+      JSON.stringify({ dayUtc: _quota.dayUtc, used: _quota.used }, null, 0) + "\n",
+      "utf8"
+    );
+  } catch (err) {
+    warnApiFootball(`No se pudo guardar cuota: ${err.message}`);
+  }
+}
+
+function ensureQuotaDayRolled() {
+  readQuotaFileOnce();
+  const today = utcDayKey();
+  if (_quota.dayUtc !== today) {
+    _quota = { dayUtc: today, used: 0 };
+    _warnedQuotaExhausted = false;
+    persistQuota();
+  }
+}
+
+/**
+ * Una solicitud HTTP entrante: devuelve false si ya se alcanzó el tope diario.
+ */
+function consumeApiFootballQuotaSlot() {
+  if (!API_KEY) return false;
+  ensureQuotaDayRolled();
+  const cap = dailyCap();
+  if (_quota.used >= cap) return false;
+  _quota.used += 1;
+  persistQuota();
+  return true;
+}
+
+/**
+ * Usado por el panel / hints: cuántas quedan y si conviene abrir un partido nuevo.
+ */
+export function getApiFootballQuotaSnapshot() {
+  ensureQuotaDayRolled();
+  const cap = dailyCap();
+  const used = _quota.used;
+  return {
+    dayUtc: _quota.dayUtc,
+    used,
+    cap,
+    remaining: Math.max(0, cap - used),
+    reservePerMatch: reservePerMatch()
+  };
+}
+
+/** Evita empezar local+visitante si no caben ~4 requests en el peor caso. */
+export function apiFootballQuotaAllowsMatchHint() {
+  if (!API_KEY) return false;
+  const s = getApiFootballQuotaSnapshot();
+  return s.remaining >= s.reservePerMatch;
+}
 
 // ESPN slug -> API-Football leagueId (temporada actual)
 const ESPN_TO_APIF = {
@@ -35,6 +145,17 @@ function normName(s) {
 
 async function safeFetch(path) {
   if (!API_KEY) return null;
+  if (!consumeApiFootballQuotaSlot()) {
+    if (!_warnedQuotaExhausted) {
+      _warnedQuotaExhausted = true;
+      const cap = dailyCap();
+      warnApiFootball(
+        `Cuota diaria agotada (${cap} req · día UTC ${_quota.dayUtc}). `
+        + `Aumenta API_FOOTBALL_MAX_REQUESTS_PER_DAY (máx. según tu plan) o espera al reset.`
+      );
+    }
+    return null;
+  }
   try {
     const url = `https://${RAPIDAPI_HOST}${path}`;
     const res = await fetch(url, {
@@ -116,4 +237,8 @@ export async function getApiFootballTeamForm(espnLeagueSlug, teamName) {
 
 export function isApiFootballSupported(slug) {
   return Boolean(ESPN_TO_APIF[slug]);
+}
+
+export function isApiFootballConfigured() {
+  return Boolean(API_KEY);
 }

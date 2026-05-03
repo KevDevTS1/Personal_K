@@ -1530,7 +1530,9 @@
   // Fetch
   // ──────────────────────────────────────────────────────────────────
   async function loadPicks() {
+    const gridEl = document.getElementById("picksGrid");
     try {
+      gridEl.innerHTML = `<div class="empty"><h3>Analizando partidos…</h3><p>El servidor genera hasta ~72 argumentos largos con IA por ciclo y el resto usa plantilla. La primera vez puede tardar hasta 90s si no hay caché.</p></div>`;
       const r = await fetch("/api/picks");
       const d = await r.json();
       state.picks = d.picks || [];

@@ -44,3 +44,4 @@ data/clubelo/
 data/sofascore/
 data/bets.json
 data/*.log
+data/.api-football-quota.json

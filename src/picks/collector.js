@@ -1,4 +1,4 @@
-import { bogotaTodayKey, bogotaDayKey } from "../utils/time.js";
+import { bogotaTodayKey } from "../utils/time.js";
 import { fetchScoreboard, enrichEspnFeedsWithSummaries } from "../data/espn.js";
 import { buildOddsStore, applyRealOddsToPickList, lookupGameOdds } from "../data/odds.js";
 import { buildColombianOddsStore, lookupColombianOdds } from "../data/colombian_odds.js";
@@ -14,7 +14,7 @@ import { analyzeTennisEvent } from "../analyzers/tennis.js";
 import { analyzeBaseballEvent } from "../analyzers/baseball.js";
 import { analyzeLiveEvent } from "../analyzers/live.js";
 import { enrichPick, attachScores } from "./enricher.js";
-import { attachLongArguments } from "./argumentBuilder.js";
+import { attachLongArguments, getArgumentFallbackText } from "./argumentBuilder.js";
 import { buildEventContext, enrichPicksWithContext } from "./context.js";
 import { enrichPicksWithSportsDB } from "../data/thesportsdb.js";
 import { enrichPicksWithFootballData } from "../data/footballdata.js";
@@ -23,6 +23,15 @@ import { applyBaseballMatchupAll } from "../model/baseballMatchup.js";
 import { enrichPlayerPropsWithBalldontlie } from "./playerStats.js";
 import { enrichPicksWithSofascore } from "../data/sofascore.js";
 import { enrichPicksWithClubElo } from "../data/clubelo.js";
+import { fetchSoccerExternalHint } from "../data/soccerHints.js";
+
+function coercePickEventDateUtc(rawIso, feedDateKey) {
+  if (rawIso) {
+    const t = new Date(rawIso).getTime();
+    if (Number.isFinite(t)) return new Date(rawIso).toISOString();
+  }
+  return `${feedDateKey}T17:00:00.000Z`;
+}
 
 export async function collectAllEvents(targetDateKey = null) {
   const dateKey = targetDateKey || bogotaTodayKey(0);
@@ -85,6 +94,9 @@ export async function createPicksFromEvents(feedSets, targetDateKey = null, cali
       const live = isEventLive(event);
       if (onlyLive && !live) continue;
       const summary = feed.summariesByEventId?.[event.id] || null;
+      const comp = event.competitions?.[0];
+      const homeC = comp?.competitors?.find(c => c.homeAway === "home");
+      const awayC = comp?.competitors?.find(c => c.homeAway === "away");
       let generated = [];
 
       if (onlyLive) {
@@ -92,24 +104,21 @@ export async function createPicksFromEvents(feedSets, targetDateKey = null, cali
         // marcador, minuto/periodo/inning y proyecta el desenlace residual.
         generated = analyzeLiveEvent(feed.sport, event, leagueName, feed.league, feed.dateKey);
       } else if (feed.sport === "futbol") {
-        generated = analyzeSoccerEvent(event, leagueName, feed.dateKey, summary, calibrationStore, feed.league);
+        const extHint = await fetchSoccerExternalHint(feed.league, homeC, awayC);
+        generated = analyzeSoccerEvent(
+          event, leagueName, feed.dateKey, summary, calibrationStore, feed.league, extHint
+        );
       } else if (feed.sport === "baloncesto") {
         generated = analyzeBasketballEvent(event, leagueName, feed.league, feed.dateKey, summary, calibrationStore);
       } else if (feed.sport === "tenis") {
         generated = analyzeTennisEvent(event, leagueName, feed.dateKey);
       } else if (feed.sport === "beisbol") {
-        const comp = event.competitions?.[0];
-        const homeC = comp?.competitors?.find(c => c.homeAway === "home");
-        const awayC = comp?.competitors?.find(c => c.homeAway === "away");
         const hName = homeC?.team?.displayName || homeC?.team?.shortDisplayName || "";
         const aName = awayC?.team?.displayName || awayC?.team?.shortDisplayName || "";
         const mlbGameData = lookupMlbGame(mlbStore, hName, aName);
         generated = analyzeBaseballEvent(event, leagueName, feed.league, feed.dateKey, summary, calibrationStore, mlbGameData);
       }
 
-      const comp = event.competitions?.[0];
-      const homeC = comp?.competitors?.find(c => c.homeAway === "home");
-      const awayC = comp?.competitors?.find(c => c.homeAway === "away");
       const eventMeta = {
         homeTeam:    homeC?.team?.shortDisplayName || homeC?.team?.displayName || null,
         awayTeam:    awayC?.team?.shortDisplayName || awayC?.team?.displayName || null,
@@ -132,6 +141,7 @@ export async function createPicksFromEvents(feedSets, targetDateKey = null, cali
 
       picks.push(...generated.map(p => ({
         ...p,
+        eventDateUtc: coercePickEventDateUtc(p.eventDateUtc, feed.dateKey),
         ...eventMeta,
         league: leagueName,
         leagueSlug: feed.league,
@@ -155,9 +165,9 @@ export async function createPicksFromEvents(feedSets, targetDateKey = null, cali
     .filter(p => p && p.event && p.selection && p.eventDateUtc)
     .filter(p => {
       if (onlyLive) return true;
-      const key = bogotaDayKey(p.eventDateUtc);
-      if (key === dateKey) return true;
-      return p.sport === "tenis" && p.sourceDateKey === dateKey;
+      // Incluye todo lo del scoreboard ESPN de este dateKey (evita cortar picks
+      // cuando la hora del partido cambia el día civil en Bogotá vs UTC).
+      return p.sourceDateKey === dateKey;
     })
     .slice(0, 600)
     .map((p, idx) => {
@@ -195,9 +205,25 @@ export async function createPicksFromEvents(feedSets, targetDateKey = null, cali
       p.argumentWords  = String(p.argument || "").trim().split(/\s+/).filter(Boolean).length;
     }
   } else {
-    // Argumento extenso (Groq + cache). Se hace despues de fijar la cuota real
-    // para que el LLM razone con la cuota correcta.
-    await attachLongArguments(filtered, 4);
+    // Solo los picks con mejor |edge| pasan por Groq/caché de argumentos largos:
+    // generar todos bloqueaba /api/picks durante minutos y el navegador quedaba "sin picks".
+    const capRaw = Number(process.env.PICKS_LONG_ARGS_CAP);
+    const cap = Math.min(
+      filtered.length,
+      Math.max(8, Number.isFinite(capRaw) && capRaw > 0 ? Math.floor(capRaw) : 72)
+    );
+    const groqPicks = [...filtered]
+      .sort((a, b) => Math.abs(Number(b.edge || 0)) - Math.abs(Number(a.edge || 0)))
+      .slice(0, cap);
+    const groqSet = new Set(groqPicks);
+    await attachLongArguments(groqPicks, 4);
+    for (const p of filtered) {
+      if (groqSet.has(p)) continue;
+      const text = getArgumentFallbackText(p);
+      p.argumentLong = text;
+      p.argumentModel = "fallback-template";
+      p.argumentWords = String(text).trim().split(/\s+/).filter(Boolean).length;
+    }
   }
 
   // Recalibra player props NBA con season averages reales (balldontlie).

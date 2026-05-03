@@ -5,6 +5,7 @@ import { createPicksFromEvents } from "../picks/collector.js";
 import { getCachedFeeds } from "../cache/feeds.js";
 import { isGroqAvailable } from "../data/llm.js";
 import { getSofascoreHealth } from "../data/sofascore.js";
+import { isApiFootballConfigured, getApiFootballQuotaSnapshot } from "../data/apifootball.js";
 
 const router = Router();
 
@@ -28,6 +29,9 @@ function buildFeedHealth(feeds, picks) {
   // Argumentos: cuantos picks tienen argumentLong de Groq vs fallback
   const argFromGroq = picks.filter(p => p.argumentModel && !String(p.argumentModel).startsWith("fallback")).length;
   const argFallback = picks.filter(p => p.argumentModel === "fallback-template").length;
+
+  const futbolUnd = picks.filter(p => p.sport === "futbol" && p.hasUnderstat).length;
+  const futbolApi = picks.filter(p => p.sport === "futbol" && p.hasApiFootball).length;
 
   return {
     espn: {
@@ -97,7 +101,9 @@ function buildFeedHealth(feeds, picks) {
     },
     understat: {
       label: "Understat (xG Top Europa)",
-      detail: "Activo · usado bajo demanda en Premier, LaLiga, Serie A, Bundesliga, Ligue 1",
+      detail: futbolUnd > 0
+        ? `${futbolUnd} picks fútbol con blend xG/goles recientes (EPL, LaLiga, Serie A, Bundesliga, Ligue 1)`
+        : "Sin picks con Understat hoy (sin big 5 en calendario, scrape vacío o nombres sin matchear)",
       status: "ok",
       requiresKey: false
     },
@@ -107,6 +113,33 @@ function buildFeedHealth(feeds, picks) {
       status: "ok",
       requiresKey: false
     },
+    apiFootball: (() => {
+      const configured = isApiFootballConfigured();
+      const q = configured ? getApiFootballQuotaSnapshot() : null;
+      let detail;
+      let status;
+      if (!configured) {
+        detail = "Falta API_FOOTBALL_KEY o RAPIDAPI_KEY · sin promedios GF/partido para MLS, Liga MX, Colombia, Argentina, Brasil, copas";
+        status = "missing_key";
+      } else if (q.remaining <= 0) {
+        detail = `Cuota local agotada (${q.used}/${q.cap} req · día UTC ${q.dayUtc}). Sin llamadas hasta el reset. Ajusta API_FOOTBALL_MAX_REQUESTS_PER_DAY si tu plan permite más.`;
+        status = "empty";
+      } else if (futbolApi > 0) {
+        detail = `${futbolApi} picks fútbol con API · ${q.used}/${q.cap} req usadas · ${q.remaining} disponibles (reserva ≥${q.reservePerMatch} por partido)`;
+        status = "ok";
+      } else {
+        detail = `Key OK · ${q.used}/${q.cap} req · ${q.remaining} restantes · 0 picks con API hoy (Understat cubre EU o ligas sin eventos / cuota reservada)`;
+        status = "ok";
+      }
+      return {
+        label: "API-Football / API-Sports (liga+temporada)",
+        detail,
+        status,
+        requiresKey: true,
+        envVar: "API_FOOTBALL_KEY o RAPIDAPI_KEY",
+        quota: q ? { used: q.used, cap: q.cap, remaining: q.remaining, dayUtc: q.dayUtc, reservePerMatch: q.reservePerMatch } : null
+      };
+    })(),
     groq: {
       label: "Groq · argumentos LLM",
       detail: isGroqAvailable()
